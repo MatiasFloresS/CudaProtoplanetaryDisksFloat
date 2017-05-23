@@ -88,13 +88,13 @@ cufftDoubleComplex *SGP_Kt_dc, *SGP_Kr_dc, *SGP_St_dc, *SGP_Sr_dc, *Gr_dc, *Gphi
 
 __host__ int main (int argc, char *argv[])
 {
-  //int device;
-  //printf("enter gpu device: ");
-  //scanf("%d", &device);
+  int device;
+  printf("enter gpu device: ");
+  scanf("%d", &device);
 
 
   //cudaSetDevice(1); Using gpu nvidia m4000 8 gb
-  cudaSetDevice(0); // Using gpu nvidia m4000 8gb
+  cudaSetDevice(device); // Using gpu nvidia m4000 8gb
 
   float     *Dens;
   float     *Vrad;
@@ -306,7 +306,7 @@ __host__ int main (int argc, char *argv[])
 
   //MultiplyPolarGridbyConstant(Dens);
   double start = omp_get_wtime();
-  for (int i = 0; i <= NTOT; i++){
+  for (int i = 0; i <= 19; i++){
     InnerOutputCounter++;
 
     if (InnerOutputCounter == 1){
@@ -317,10 +317,10 @@ __host__ int main (int argc, char *argv[])
 
     if (NINTERM * (TimeStep = (i / NINTERM)) == i){
       /* Outputs are done here */
-      printf("%d\n", i);
+      //printf("%d\n", i);
       TimeToWrite = YES;
-      DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
-      SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
+      //DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
+      //SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
       //WritePlanetSystemFile (sys, TimeStep);
     }
     else TimeToWrite = NO;

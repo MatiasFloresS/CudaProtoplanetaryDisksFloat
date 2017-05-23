@@ -68,9 +68,9 @@ __host__ void FillPolar1DArrays ()
   FILE *input, *output;
   int i,j;
   double *Radii2, *Rmed2;
-  double drrsep, temporary;
+  float drrsep, temporary;
   string InputName, OutputName;
-  drrsep = (RMAX-RMIN)/(double)NRAD;
+  drrsep = (RMAX-RMIN)/(float)NRAD;
   InputName = OUTPUTDIR + "radii.dat";
   OutputName = OUTPUTDIR + "used_rad.dat";
 
@@ -112,14 +112,14 @@ __host__ void FillPolar1DArrays ()
     else {
       for (i = 0; i <= NRAD; i++)
         Radii2[i] = RMIN+drrsep*(double)i;
-        Radii[i] = Radii2[i];
+        Radii[i] = (float)Radii2[i];
     }
   }
   else {
     printf("Reading 'radii.dat' file.\n");
     for (i = 0; i <= NRAD; i++){
-      fscanf (input, "%lf", &temporary);
-      Radii[i] = (double)temporary;
+      fscanf (input, "%f", &temporary);
+      Radii[i] = (float)temporary;
     }
   }
 
