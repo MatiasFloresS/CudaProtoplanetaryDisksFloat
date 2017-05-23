@@ -56,7 +56,7 @@ float mdcp, SGP_tstep, SGP_eps, SGP_rstep;
 extern float HillRadius;
 extern float *invdiffRmed, *Rinf_d, *Rinf, *invRinf, *Rmed, *invRmed, *Rsup, *invdiffRsup;
 
-double OmegaFrame;
+float OmegaFrame;
 float *invdiffRmed_d, *invRinf_d, *invRmed_d, *Rmed_d, *Rsup_d, *invdiffRsup_d;
 
 float *q0, *PlanetMasses, *q1;
@@ -66,7 +66,7 @@ extern int *NoSplitAdvection_d;
 extern int *Nshift_d;
 
 int nrad2pot, nsec2pot, size_grid, nrad2potSG, nsec2potplus, *CFL_d, *CFL;
-int blocksize2D = 16;
+int blocksize2D = 32;
 int blocksize1D = 256;
 
 int         TimeToWrite, Restart = NO; // OpenInner = NO;
@@ -317,7 +317,7 @@ __host__ int main (int argc, char *argv[])
 
     if (NINTERM * (TimeStep = (i / NINTERM)) == i){
       /* Outputs are done here */
-      //printf("%d\n", i);
+      printf("%d\n", i);
       TimeToWrite = YES;
       DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
       SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);

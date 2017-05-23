@@ -35,12 +35,12 @@ __host__ void UpdateLog (Force *force, PlanetarySystem *sys, float *Dens, float 
     y = sys->y[i];
     vx = sys->vx[i];
     vy = sys->vy[i];
-    r = sqrtf(x*x+y*y);
+    r = sqrt(x*x+y*y);
     m = sys->mass[i];
-    a = sqrtf(x*x+y*y);
-    rh = powf(m/3., 1./3.)*a+1e-15;
+    a = sqrt(x*x+y*y);
+    rh = pow(m/3., 1./3.)*a+1e-15;
 
-    if (RocheSmoothing) smoothing = r*powf(m/3.,1./3.)*ROCHESMOOTHING;
+    if (RocheSmoothing) smoothing = r*pow(m/3.,1./3.)*ROCHESMOOTHING;
     else smoothing = Compute_smoothing(r);
 
     ComputeForce (force, Dens, x, y, smoothing, m, dimfxy, a, rh);
@@ -106,7 +106,6 @@ __host__ void ComputeForce (Force *force, float *Dens, float x, float y, float r
   int k;
 
   globalforce = force->GlobalForce;
-  float valor;
 
   for (k = 0; k < dimfxy; k++) {
     gpuErrchk(cudaMemset(fxi_d, 0, NRAD*NSEC*sizeof(float)));
@@ -138,7 +137,7 @@ __host__ void ComputeForce (Force *force, float *Dens, float x, float y, float r
 __host__ float Compute_smoothing(float r)
 {
   float smooth;
-  smooth = THICKNESSSMOOTHING * AspectRatioHost(r) * powf(r, 1.0+FLARINGINDEX);
+  smooth = THICKNESSSMOOTHING * AspectRatioHost(r) * pow(r, 1.0+FLARINGINDEX);
   return smooth;
 }
 

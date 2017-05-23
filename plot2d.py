@@ -86,8 +86,8 @@ vel_unit_cgs = au_in_cm/Timeunit_in_seconds  #cm/s
 
 
 # grid specification
-nrad = 128 #128 #500
-nsec = 384 # 256 #1500
+nrad = 1024 #128 #500
+nsec = 2048 # 256 #1500
 Rmin = 3.2
 Rmax = 7.2
 

@@ -67,13 +67,16 @@ __host__ void FillPolar1DArrays ()
 {
   FILE *input, *output;
   int i,j;
-  float drrsep, temporary;
+  double *Radii2, *Rmed2;
+  double drrsep, temporary;
   string InputName, OutputName;
-  drrsep = (RMAX-RMIN)/(float)NRAD;
+  drrsep = (RMAX-RMIN)/(double)NRAD;
   InputName = OUTPUTDIR + "radii.dat";
   OutputName = OUTPUTDIR + "used_rad.dat";
 
   /* Creo los arreglos de FillPolar1DArrays */
+  Radii2       = (double *)malloc((NRAD+1)*sizeof(double));
+  Rmed2        = (double *)malloc((NRAD+1)*sizeof(double));
   Radii       = (float *)malloc((NRAD+1)*sizeof(float));
   Rinf        = (float *)malloc((NRAD+1)*sizeof(float));
   Rmed        = (float *)malloc((NRAD+1)*sizeof(float));
@@ -102,40 +105,43 @@ __host__ void FillPolar1DArrays ()
       for (i = 0; i <= NRAD; i++){
         /* Usamos doubles para calcular los valores de los arrays, luego
            los pasamos a float */
-        Radii[i] = (float)RMIN*exp((float)i/(float)NRAD*log((float)RMAX/(float)RMIN));
+        Radii2[i] = (double)RMIN*exp((double)i/(double)NRAD*log((double)RMAX/(double)RMIN));
+        Radii[i] = Radii2[i];
       }
     }
     else {
       for (i = 0; i <= NRAD; i++)
-        Radii[i] = RMIN+drrsep*(float)i;
+        Radii2[i] = RMIN+drrsep*(double)i;
+        Radii[i] = Radii2[i];
     }
   }
   else {
     printf("Reading 'radii.dat' file.\n");
     for (i = 0; i <= NRAD; i++){
-      fscanf (input, "%f", &temporary);
-      Radii[i] = (float)temporary;
+      fscanf (input, "%lf", &temporary);
+      Radii[i] = (double)temporary;
     }
   }
 
   for (i = 0; i < NRAD; i++){
-    Rinf[i] = Radii[i];
-    Rsup[i] = Radii[i+1];
-    Rmed[i] = 2.0/3.0*(Radii[i+1]*Radii[i+1]*Radii[i+1]-Radii[i]*Radii[i]*Radii[i]);
-    Rmed[i] = Rmed[i] / (Radii[i+1]*Radii[i+1]-Radii[i]*Radii[i]);
-    Surf[i] = PI*(Radii[i+1]*Radii[i+1]-Radii[i]*Radii[i])/(float)NSEC;
-    invRmed[i] = 1.0/Rmed[i];
+    Rinf[i] = Radii2[i];
+    Rsup[i] = Radii2[i+1];
+    Rmed2[i] = 2.0/3.0*(Radii2[i+1]*Radii2[i+1]*Radii2[i+1]-Radii2[i]*Radii2[i]*Radii2[i]);
+    Rmed2[i] = Rmed2[i] / (Radii2[i+1]*Radii2[i+1]-Radii2[i]*Radii2[i]);
+    Rmed[i] = Rmed2[i];
+    Surf[i] = PI*(Radii2[i+1]*Radii2[i+1]-Radii2[i]*Radii2[i])/(double)NSEC;
+    invRmed[i] = 1.0/Rmed2[i];
     invSurf[i] = 1.0/Surf[i];
-    invdiffRsup[i] = 1.0/(Radii[i+1]-Radii[i]);
-    invRinf[i] = 1.0/Radii[i];
+    invdiffRsup[i] = 1.0/(Radii2[i+1]-Radii2[i]);
+    invRinf[i] = 1.0/Radii2[i];
   }
 
   Rinf[NRAD] = Radii[NRAD];
 
   for (i = 0; i < NRAD; i++) {
-    if (i > 0 )invdiffRmed[i] = 1.0/(Rmed[i]-Rmed[i-1]);
+    if (i > 0 )invdiffRmed[i] = 1.0/(Rmed2[i]-Rmed2[i-1]);
 
-    powRmed[i] = pow(Rmed[i],-2.5+SIGMASLOPE);
+    powRmed[i] = pow(Rmed2[i],-2.5+SIGMASLOPE);
   }
 
   /* string to char OutputName */
@@ -267,7 +273,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
         printf("c");
       }
       else*/
-      printf(".");
+      //printf(".");
       //if (ZMPlus) compute_anisotropic_pressurecoeff(sys);
 
       ComputePressureField ();
@@ -303,7 +309,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
 
 
   }
-  printf("\n" );
+  //printf("\n" );
 }
 
 
