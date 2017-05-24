@@ -225,9 +225,8 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
     if(IsDisk == YES){
       if (SloppyCFL == NO){
         gastimestepcfl = 1;
-        gastimestepcfl = ConditionCFL(Vrad, Vtheta ,DT-dtemp); //revisar
+        gastimestepcfl = ConditionCFL(Vrad, Vtheta ,DT-dtemp);
         dt = (DT-dtemp)/(float)gastimestepcfl;
-        //printf("%d\n", gastimestepcfl);
       }
       AccreteOntoPlanets(Dens, Vrad, Vtheta, dt, sys); // si existe acrecion entra
     }
@@ -273,7 +272,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
         printf("c");
       }
       else*/
-      //printf(".");
+      printf(".");
       //if (ZMPlus) compute_anisotropic_pressurecoeff(sys);
 
       ComputePressureField ();
@@ -286,12 +285,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
       ApplyBoundaryCondition (Dens, Energy, Vrad, Vtheta, dt);
 
       if (Adiabatic){
-        //gpuErrchk(cudaMemcpy(Vradial_d, Vrad_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
-        //gpuErrchk(cudaMemcpy(Vazimutal_d, Vtheta_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
         ComputeViscousTerms (Vrad_d, Vtheta_d, Dens);
-        //gpuErrchk(cudaMemcpy(Vrad_d, Vradial_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
-        //gpuErrchk(cudaMemcpy(Vtheta_d, Vazimutal_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
-
         Substep3 (Dens, dt);
         ActualiseGasEnergy (Energy, EnergyNew);
       }
@@ -309,7 +303,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
 
 
   }
-  //printf("\n" );
+  printf("\n" );
 }
 
 
@@ -338,8 +332,6 @@ __host__ void Substep1 (float *Dens, float *Vrad, float *Vtheta, float dt, int i
     gpuErrchk(cudaMemcpy(VthetaInt_d, Vazimutal_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
   }
 
-  //gpuErrchk(cudaMemcpy(Vradial_d, VradInt_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
-  //gpuErrchk(cudaMemcpy(Vazimutal_d, VthetaInt_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
   ComputeViscousTerms (VradInt_d, VthetaInt_d, Dens);
   UpdateVelocitiesWithViscosity(VradInt, VthetaInt, Dens, dt);
 

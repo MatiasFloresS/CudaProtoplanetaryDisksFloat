@@ -1250,7 +1250,7 @@ __global__ void FillForcesArraysKernel (float *Rmed, int nsec, int nrad, double 
     pot = -G*mplanet/distancesmooth; /* Direct term from planet */
     if (Indirect_Term == YES)
       pot += G*mplanet*InvPlanetDistance3*(x*xplanet+y*yplanet); /* Indirect term from planet */
-    Potential[i*nsec + j] = pot;
+    Potential[i*nsec + j] += pot;
 
     if (k == 0) {
      /* -- Gravitational potential from star on gas -- */

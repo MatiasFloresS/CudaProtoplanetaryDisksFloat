@@ -62,8 +62,8 @@ __host__ void FillForcesArrays (PlanetarySystem *sys, float *Dens, float *Energy
 
   /* Indirect term star on gas here */
   ComputeIndirectTerm ();
+  gpuErrchk(cudaMemset(Potential_d, 0, size_grid*sizeof(float)));
 
-  //gpuErrchk(cudaMemset(Potential_d, 0, size_grid*sizeof(float)));
   /* -- Gravitational potential from planet on gas -- */
   for (k = 0; k < NbPlanets; k++){
     xplanet = sys->x[k];
