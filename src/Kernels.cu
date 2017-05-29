@@ -2,7 +2,7 @@
 
 extern int blocksize2, size_grid, NRAD, NSEC;
 
-extern float *GLOBAL_bufarray;
+extern float *GLOBAL_bufarray, *SoundSpeed_d;
 extern float *gridfield_d, *GLOBAL_bufarray_d, *axifield_d, *SG_Accr_d, *GLOBAL_AxiSGAccr_d;
 
 extern float ASPECTRATIO, TRANSITIONWIDTH, TRANSITIONRATIO, TRANSITIONRADIUS, LAMBDADOUBLING;
@@ -628,7 +628,7 @@ __host__ void Make1Dprofile (int option)
 
   /* GLOBAL AxiSGAccr option */
   if (option == 1){
-    gpuErrchk(cudaMemcpy(gridfield_d, SG_Accr_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
+    gpuErrchk(cudaMemcpy(gridfield_d, SoundSpeed_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
     //gpuErrchk(cudaMemcpy(GLOBAL_AxiSGAccr_d, axifield_d, NRAD*sizeof(float), cudaMemcpyDeviceToHost));
 
   }
@@ -640,16 +640,14 @@ __host__ void Make1Dprofile (int option)
 
   Make1DprofileKernel<<<dimGrid4, dimBlock>>>(gridfield_d, axifield_d, NSEC, NRAD);
   gpuErrchk(cudaDeviceSynchronize());
+  gpuErrchk(cudaMemcpy(GLOBAL_bufarray, axifield_d, NRAD*sizeof(float), cudaMemcpyDeviceToHost));
 
 }
 
-
 /* LISTO */
 __global__ void InitGasVelocitiesKernel (int nsec, int nrad, int SelfGravity, float *Rmed,
-  float ASPECTRATIO, float FLARINGINDEX, float SIGMASLOPE, int CentrifugalBalance, float *Vrad, float *Vtheta,
-  float ViscosityAlpha, float IMPOSEDDISKDRIFT, float SIGMA0, float *SigmaInf, float OmegaFrame, float *Rinf,
-  float *vt_cent, float VISCOSITY, float ALPHAVISCOSITY, float CAVITYWIDTH, float CAVITYRADIUS,
-  float CAVITYRATIO, float PhysicalTime, float PhysicalTimeInitial, float LAMBDADOUBLING)
+  float ASPECTRATIO, float FLARINGINDEX, float SIGMASLOPE, float *Vrad, float *Vtheta,
+  float IMPOSEDDISKDRIFT, float SIGMA0, float *SigmaInf, float OmegaFrame, float *Rinf, int ViscosityAlpha, float *viscosity_array)
 {
     int j = threadIdx.x + blockDim.x*blockIdx.x;
     int i = threadIdx.y + blockDim.y*blockIdx.y;
@@ -671,24 +669,17 @@ __global__ void InitGasVelocitiesKernel (int nsec, int nrad, int SelfGravity, fl
         Vtheta[i*nsec + j] = omega*r*sqrt(1.0-powf(ASPECTRATIO,2.0)*powf(r,2.0*FLARINGINDEX)* \
         (1.+SIGMASLOPE-2.0*FLARINGINDEX));
       }
-
       Vtheta[i*nsec + j ] -= OmegaFrame*r;
 
 
       //if (CentrifugalBalance) Vtheta[i*nsec + j] = vt_cent[i];
 
-      if (i == nrad) viscosity = FViscosityDevice(r, VISCOSITY, ViscosityAlpha, Rmed, ALPHAVISCOSITY, CAVITYWIDTH,
-        CAVITYRADIUS, CAVITYRATIO, PhysicalTime, PhysicalTimeInitial, ASPECTRATIO, LAMBDADOUBLING);
-      else viscosity = FViscosityDevice(r, VISCOSITY, ViscosityAlpha, Rmed, ALPHAVISCOSITY, CAVITYWIDTH,
-        CAVITYRADIUS, CAVITYRATIO, PhysicalTime, PhysicalTimeInitial, ASPECTRATIO, LAMBDADOUBLING);
-
-
       if (i == nrad) Vrad[i*nsec + j] = 0.0;
       else {
         Vrad[i*nsec + j] = IMPOSEDDISKDRIFT*SIGMA0/SigmaInf[i]/ri;
 
-        if (ViscosityAlpha) Vrad[i*nsec+j] -= 3.0*viscosity/r*(-SIGMASLOPE+2.0*FLARINGINDEX+1.0);
-        else Vrad[i*nsec+j] -= 3.0*viscosity/r*(-SIGMASLOPE+.5);
+        if (ViscosityAlpha) Vrad[i*nsec+j] -= 3.0*viscosity_array[i]/r*(-SIGMASLOPE+2.0*FLARINGINDEX+1.0);
+        else Vrad[i*nsec+j] -= 3.0*viscosity_array[i]/r*(-SIGMASLOPE+.5);
 
       }
 
@@ -1400,17 +1391,17 @@ __device__ float AspectRatioDevice(float r, float ASPECTRATIO, float TRANSITIONW
   return aspectratio;
 }
 
-__device__ float FViscosityDevice(float r, float VISCOSITY, int ViscosityAlpha, float *Rmed, float ALPHAVISCOSITY,
+/*__device__ float FViscosityDevice(float r, float VISCOSITY, int ViscosityAlpha, float *Rmed, float ALPHAVISCOSITY,
   float CAVITYWIDTH, float CAVITYRADIUS, float CAVITYRATIO, float PhysicalTime, float PhysicalTimeInitial,
   float ASPECTRATIO, float LAMBDADOUBLING)
 {
   float viscosity, rmin, rmax, scale;
   int i = 0;
   viscosity = VISCOSITY;
-  // if (ViscosityAlpha){
-  //   while (Rmed[i] < r) i++;
-  //   viscosity = ALPHAVISCOSITY*GLOBAL_bufarray[i] * GLOBAL_bufarray[i] * powf(r, 1.5);
-  // }
+  if (ViscosityAlpha){
+     while (Rmed[i] < r) i++;
+     viscosity = ALPHAVISCOSITY*GLOBAL_bufarray[i] * GLOBAL_bufarray[i] * powf(r, 1.5);
+  }
   rmin = CAVITYRADIUS-CAVITYWIDTH*ASPECTRATIO;
   rmax = CAVITYRADIUS+CAVITYWIDTH*ASPECTRATIO;
   scale = 1.0+(PhysicalTime-PhysicalTimeInitial)*LAMBDADOUBLING;
@@ -1419,7 +1410,7 @@ __device__ float FViscosityDevice(float r, float VISCOSITY, int ViscosityAlpha, 
   if (r < rmin) viscosity *= CAVITYRATIO;
   if ((r >= rmin) && (r <= rmax)) viscosity *= expf((rmax-r)/(rmax-rmin)*logf(CAVITYRATIO));
   return viscosity;
-}
+}*/
 
 
 __global__ void ApplySubKeplerianBoundaryKernel(float *VthetaInt, float *Rmed, float OmegaFrame, int nsec,

@@ -37,7 +37,7 @@ __host__ float FViscosity(float r)
   viscosity = VISCOSITY;
   if (ViscosityAlpha){
     while (Rmed[i] < r) i++;
-    viscosity = ALPHAVISCOSITY*GLOBAL_bufarray[i] * GLOBAL_bufarray[i] * powf(r, 1.5);
+    viscosity = ALPHAVISCOSITY*GLOBAL_bufarray[i] * GLOBAL_bufarray[i] * pow(r, 1.5);
   }
   rmin = CAVITYRADIUS-CAVITYWIDTH*ASPECTRATIO;
   rmax = CAVITYRADIUS+CAVITYWIDTH*ASPECTRATIO;
@@ -53,7 +53,7 @@ __host__ void ComputeViscousTerms (float *Vradial_d, float *Vazimutal_d, float *
 {
 
   if (ViscosityAlpha){
-    gpuErrchk(cudaMemcpy(SoundSpeed, SoundSpeed_d, size_grid*sizeof(float), cudaMemcpyDeviceToHost));
+    //gpuErrchk(cudaMemcpy(SoundSpeed, SoundSpeed_d, size_grid*sizeof(float), cudaMemcpyDeviceToHost));
     Make1Dprofile (1);
   }
 

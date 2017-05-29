@@ -235,7 +235,7 @@ __host__ void InitGasVelocities (float *Vrad, float *Vtheta)
     Init_azimutalvelocity_withSG (Vtheta);
 
   if (ViscosityAlpha){
-    gpuErrchk(cudaMemcpy(SoundSpeed, SoundSpeed_d, size_grid*sizeof(float), cudaMemcpyDeviceToHost));
+    //gpuErrchk(cudaMemcpy(SoundSpeed, SoundSpeed_d, size_grid*sizeof(float), cudaMemcpyDeviceToHost));
     Make1Dprofile(1);
   }
 
@@ -257,10 +257,14 @@ __host__ void InitVelocities (float *Vrad, float *Vtheta)
 {
   //if (SelfGravity) gpuErrchk(cudaMemcpy(vt_cent_d, vt_cent,     (NRAD+1)*sizeof(float), cudaMemcpyHostToDevice));
 
+  for (int i = 0; i < NRAD; i++) viscosity_array[i] = FViscosity(Rmed[i]);
+  viscosity_array[NRAD] = FViscosity(Rmed[NRAD-1]);
+
+  gpuErrchk(cudaMemcpy(viscosity_array_d, viscosity_array, (NRAD+1)*sizeof(float), cudaMemcpyHostToDevice));
+
   InitGasVelocitiesKernel<<<dimGrid2, dimBlock2>>>(NSEC, NRAD, SelfGravity, Rmed_d,
-  ASPECTRATIO, FLARINGINDEX, SIGMASLOPE, CentrifugalBalance, Vrad_d, Vtheta_d, ViscosityAlpha,
-  IMPOSEDDISKDRIFT, SIGMA0, SigmaInf_d, OmegaFrame, Rinf_d, vt_cent_d, VISCOSITY, ALPHAVISCOSITY,
-  CAVITYWIDTH, CAVITYRADIUS, CAVITYRATIO, PhysicalTime, PhysicalTimeInitial, LAMBDADOUBLING);
+  ASPECTRATIO, FLARINGINDEX, SIGMASLOPE, Vrad_d, Vtheta_d, IMPOSEDDISKDRIFT, SIGMA0, SigmaInf_d,
+  OmegaFrame, Rinf_d, ViscosityAlpha, viscosity_array_d);
   gpuErrchk(cudaDeviceSynchronize());
 
 }

@@ -624,7 +624,7 @@ __host__ void CreateArrays () // ordenar
   SigmaMed          = (float *)malloc((NRAD+1)*sizeof(float));
   SigmaInf          = (float *)malloc((NRAD+1)*sizeof(float));
   vt_int            = (float *)malloc((NRAD+1)*sizeof(float));
-  GLOBAL_bufarray   = (float *)malloc((NRAD+1)*sizeof(float));
+  GLOBAL_bufarray   = (float *)malloc((NRAD)*sizeof(float));
   GLOBAL_AxiSGAccr  = (float *)malloc((NRAD+1)*sizeof(float));
   QplusMed          = (float *)malloc((NRAD+1)*sizeof(float));
   CoolingTimeMed    = (float *)malloc((NRAD+1)*sizeof(float));
@@ -678,9 +678,9 @@ __host__ void Cudamalloc (float *Label, float *Dens, float *Vrad, float *Vtheta)
     gpuErrchk(cudaMalloc((void**)&Kt_aux_d,  2*size_grid*sizeof(float)));
     gpuErrchk(cudaMalloc((void**)&SG_Accr_d, size_grid*sizeof(float)));
     gpuErrchk(cudaMalloc((void**)&SG_Acct_d, size_grid*sizeof(float)));
-    gpuErrchk(cudaMalloc((void**)&axifield_d, NRAD*sizeof(float)));
   }
 
+  gpuErrchk(cudaMalloc((void**)&axifield_d, NRAD*sizeof(float)));
   gpuErrchk(cudaMalloc((void**)&Vradial_d,   size_grid*sizeof(float)));
   gpuErrchk(cudaMalloc((void**)&Vazimutal_d, size_grid*sizeof(float)));
 
@@ -761,11 +761,12 @@ __host__ void Cudamalloc (float *Label, float *Dens, float *Vrad, float *Vtheta)
 
   gpuErrchk(cudaMalloc((void**)&Qplus_d,            size_grid*sizeof(float)));
   gpuErrchk(cudaMalloc((void**)&EnergyNew_d,        size_grid*sizeof(float)));
-  gpuErrchk(cudaMalloc((void**)&GLOBAL_bufarray_d,  (NRAD+1)*sizeof(float)));
+  gpuErrchk(cudaMalloc((void**)&GLOBAL_bufarray_d,  (NRAD)*sizeof(float)));
 
   gpuErrchk(cudaMemset(Qplus_d, 0,            size_grid*sizeof(float)));
   gpuErrchk(cudaMemset(EnergyNew_d, 0,        size_grid*sizeof(float)));
-  gpuErrchk(cudaMemset(GLOBAL_bufarray_d, 0,  (NRAD+1)*sizeof(float)));
+  gpuErrchk(cudaMemset(GLOBAL_bufarray_d, 0,  (NRAD)*sizeof(float)));
+  gpuErrchk(cudaMemset(axifield_d, 0,  (NRAD)*sizeof(float)));
 
 
   /* cudaMalloc polar grid */

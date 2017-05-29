@@ -81,10 +81,8 @@ __global__ void MinusMeanKernel (float *Dens, float *Energy, float SigmaMed, flo
 __global__ void Make1DprofileKernel (float *device_out2, float *gridfield, float *axifield, int nsec, int nrad);
 
 __global__ void InitGasVelocitiesKernel (int nsec, int nrad, int SelfGravity, float *Rmed,
-  float ASPECTRATIO, float FLARINGINDEX, float SIGMASLOPE, int CentrifugalBalance, float *Vrad, float *Vtheta,
-  float ViscosityAlpha, float IMPOSEDDISKDRIFT, float SIGMA0, float *SigmaInf, float OmegaFrame, float *Rinf,
-  float *vt_cent, float VISCOSITY, float ALPHAVISCOSITY, float CAVITYWIDTH, float CAVITYRADIUS,
-  float CAVITYRATIO, float PhysicalTime, float PhysicalTimeInitial, float LAMBDADOUBLING);
+  float ASPECTRATIO, float FLARINGINDEX, float SIGMASLOPE, float *Vrad, float *Vtheta,
+  float IMPOSEDDISKDRIFT, float SIGMA0, float *SigmaInf, float OmegaFrame, float *Rinf, int ViscosityAlpha, float *viscosity_array);
 
 __host__ void Make1Dprofile (int option);
 
