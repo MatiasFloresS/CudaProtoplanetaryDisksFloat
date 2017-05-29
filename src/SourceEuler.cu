@@ -106,13 +106,14 @@ __host__ void FillPolar1DArrays ()
         /* Usamos doubles para calcular los valores de los arrays, luego
            los pasamos a float */
         Radii2[i] = (double)RMIN*exp((double)i/(double)NRAD*log((double)RMAX/(double)RMIN));
-        Radii[i] = Radii2[i];
+        Radii[i] = (float) Radii2[i];
       }
     }
     else {
-      for (i = 0; i <= NRAD; i++)
+      for (i = 0; i <= NRAD; i++){
         Radii2[i] = RMIN+drrsep*(double)i;
         Radii[i] = (float)Radii2[i];
+      }
     }
   }
   else {
@@ -136,7 +137,7 @@ __host__ void FillPolar1DArrays ()
     invRinf[i] = 1.0/Radii2[i];
   }
 
-  Rinf[NRAD] = Radii[NRAD];
+  Rinf[NRAD] = Radii2[NRAD];
 
   for (i = 0; i < NRAD; i++) {
     if (i > 0 )invdiffRmed[i] = 1.0/(Rmed2[i]-Rmed2[i-1]);
@@ -154,7 +155,7 @@ __host__ void FillPolar1DArrays ()
     exit (1);
   }
   for (i = 0; i <= NRAD; i++){
-    fprintf (output, "%.30f\n", Radii[i]);
+    fprintf (output, "%.18g\n", Radii2[i]);
   }
   fclose (output);
   if (input != NULL) fclose (input);
@@ -271,7 +272,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
         printf("c");
       }
       else*/
-      printf(".");
+      //printf(".");
       //if (ZMPlus) compute_anisotropic_pressurecoeff(sys);
 
       ComputePressureField ();
@@ -302,7 +303,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
 
 
   }
-  printf("\n" );
+  //printf("\n" );
 }
 
 

@@ -31,7 +31,7 @@ InnerBoundary   	EVANESCENT			# Boundary condition at inner and outer edges
 RadialSpacing   	A     			# Type L for logarithmic radial spacing of the cells
 Disk            	YES			# do we include the disc?
 OmegaFrame      	0.0			# Frame's angular frequency
-Frame           	F			# Type C for a frame corotating with a planet
+Frame           	COROTATING		# Type C for a frame corotating with a planet
 IndirectTerm    	YES			# do we include the indirect acceleration?
 
 ##################			

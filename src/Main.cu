@@ -66,7 +66,7 @@ extern int *NoSplitAdvection_d;
 extern int *Nshift_d;
 
 int nrad2pot, nsec2pot, size_grid, nrad2potSG, nsec2potplus, *CFL_d, *CFL;
-int blocksize2D = 32;
+int blocksize2D = 16;
 int blocksize1D = 256;
 
 int         TimeToWrite, Restart = NO; // OpenInner = NO;
@@ -311,7 +311,7 @@ __host__ int main (int argc, char *argv[])
 
     if (InnerOutputCounter == 1){
       InnerOutputCounter = 0;
-      //WriteBigPlanetSystemFile (sys, TimeStep);
+      WriteBigPlanetSystemFile (sys, TimeStep);
       //UpdateLog(force, sys, Dens, Energy, TimeStep, PhysicalTime, dimfxy);
     }
 
@@ -321,7 +321,7 @@ __host__ int main (int argc, char *argv[])
       TimeToWrite = YES;
       DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
       SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
-      //WritePlanetSystemFile (sys, TimeStep);
+      WritePlanetSystemFile (sys, TimeStep);
     }
     else TimeToWrite = NO;
     /* Algorithm loop begins here *
@@ -830,7 +830,7 @@ __host__ void binFile(float *array, int sizeArray, char *name)
 {
   FILE *f;
   char filename[100];
-  sprintf(filename, "../output/%s.raw",name);
+  sprintf(filename, "../output/%s.dat",name);
   f = fopen(filename, "w");
   fwrite(array, sizeof(float), sizeArray, f);
   fclose(f);
