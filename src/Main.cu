@@ -306,7 +306,7 @@ __host__ int main (int argc, char *argv[])
 
   //MultiplyPolarGridbyConstant(Dens);
   double start = omp_get_wtime();
-  for (int i = 0; i <= NTOT; i++){
+  for (int i = 0; i <= 0; i++){
     InnerOutputCounter++;
 
     if (InnerOutputCounter == 1){
