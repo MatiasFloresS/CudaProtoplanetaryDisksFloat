@@ -1,0 +1,70 @@
+##################
+### Gas parameters
+##################                
+AspectRatio     	0.0233326 		# disc aspect ratio H/R at R=1 (code's unit of length)
+Sigma0          	4.6e-6   		# disc surface density  at R=1 (code's unit of length)
+SigmaSlope      	1.0      		# NB: Sigma0(R) scales as R^-SigmaSlope
+FlaringIndex    	0.142857    		# NB: H/R scales as R^FlaringIndex
+viscosity       	1e-4     		# disc viscosity
+
+SelfGravity     	No      		# do we include disc self-gravity (SG)?
+SgThicknessSmoothing    0.6 			# SG softening length to pressure scale ratio
+AddNoise		No       		# add initial random perturbations to gas surface density
+
+EnergyEquation 	 	No	 		# do we include an energy equation?
+AdiabaticIndex  	1.4      		# gamma = ratio of specific heats
+BetaCooling     	No	 		# to set the cooling rate to e/tau_cool
+BetaCoolingTime		20.0	 		# cooling timescale tau_cool = BetaCoolingTime / Omega
+ThermalDiffusion 	No	 		# do we include thermal diffusion?
+Diffusivity     	1e-4	 		# thermal diffusivity [length^2/time] in code units
+TempPresc       	No       		# relaxation toward initial temperature profile -T / tau_cool
+PrescTime0      	31.4     		# tau_cool = PrescTime0 / Omega
+ThermalCooling  	Yes	 		# to calculate radiative cooling rate with Bell & Lin opacities
+ViscousHeating		No	 		# do we include viscous heating?
+StellarHeating  	Yes      		# do we include stellar irradiation?
+ModifiedSoundSpeed 	No
+
+##################
+### Star and planet parameters
+##################
+PlanetConfig    	in/3p_b.cfg 		# file contains planet parameters
+ForcedCircular  	No			# do we keep planets on fixed circular orbits?
+ThicknessSmoothing 	0.6			# planet potential softening length to pressure scale height ratio
+Transport       	FARGO			# FARGO handling of CFL timestep (otherwise set to STANDARD)
+
+FeedBack		No    			# planet feedback
+Shadows 		No
+
+##################
+### Grid parameters
+##################			
+Nrad            	128			# Number of grid cells along radial direction
+Nsec            	256			# Number of grid cells along azimuthal direction
+Rmin            	4.0			# Grid's inner edge
+Rmax            	126.0			# Grid's outer edge
+InnerBoundary   	E			# Boundary condition at inner and outer edges
+WKZRMIN	        	5.0			# 1.25*Rmin
+WKZRMAX	        	110.0		# 0.84*Rmax
+DampToAxi		Yes
+RadialSpacing   	A     			# Type L for logarithmic radial spacing of the cells
+Disk            	Yes			# do we include the disc?
+OmegaFrame      	0.0			# Frame's angular frequency
+Frame           	F			# Type C for a frame corotating with a planet
+IndirectTerm    	Yes			# do we include the indirect acceleration?
+AddFloors		Yes			# to avoid gas density and thermal energy to reach too small values
+FACTORUNITMASS          1.6
+CAVITYRADIUS		20.0
+CAVITYRATIO		500.0
+
+##################			
+### Outputs control parameters
+##################
+WRITESTELLHEAT 		No
+WRITEPOTENTIAL No
+WRITEGR 	No
+WRITEGTHETA NO
+ReadPlanetFileAtRestart	Yes			# to restart a run with a planet already included
+Ntot		 	200000			# NtotxDT/2Pi sets the total number of orbits (at R=1)
+Ninterm          	20			# Ninterm*DT/2pi sets the time in orbits between outputs
+DT		 	31.4	
+OutputDir        	3p_b/			# Name of outputs directory (local)
