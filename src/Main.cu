@@ -306,12 +306,12 @@ __host__ int main (int argc, char *argv[])
 
   //MultiplyPolarGridbyConstant(Dens);
   double start = omp_get_wtime();
-  for (int i = 0; i <= 0; i++){
+  for (int i = 0; i <= NTOT; i++){
     InnerOutputCounter++;
 
     if (InnerOutputCounter == 1){
       InnerOutputCounter = 0;
-      //WriteBigPlanetSystemFile (sys, TimeStep);
+      WriteBigPlanetSystemFile (sys, TimeStep);
       //UpdateLog(force, sys, Dens, Energy, TimeStep, PhysicalTime, dimfxy);
     }
 

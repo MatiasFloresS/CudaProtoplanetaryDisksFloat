@@ -38,7 +38,7 @@ Shadows 		No
 ##################
 ### Grid parameters
 ##################			
-Nrad            	128			# Number of grid cells along radial direction
+Nrad            	127			# Number of grid cells along radial direction
 Nsec            	256			# Number of grid cells along azimuthal direction
 Rmin            	4.0			# Grid's inner edge
 Rmax            	126.0			# Grid's outer edge
