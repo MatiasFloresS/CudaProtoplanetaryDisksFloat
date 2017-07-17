@@ -64,6 +64,7 @@ float *q0, *PlanetMasses, *q1;
 extern int NRAD, NSEC, Cooling;
 extern int *NoSplitAdvection_d;
 extern int *Nshift_d;
+extern int LogGrid;
 
 int nrad2pot, nsec2pot, size_grid, nrad2potSG, nsec2potplus, *CFL_d, *CFL;
 int blocksize2D = 16;
@@ -81,7 +82,7 @@ dim3 dimGrid2, dimBlock2, dimGrid, dimBlock, dimGrid3, dimGrid4;
 
 cufftHandle planf, planb;
 
-cufftDoubleComplex *SGP_Kt_dc, *SGP_Kr_dc, *SGP_St_dc, *SGP_Sr_dc, *Gr_dc, *Gphi_dc, *Gr_d, *Gphi_d, *SGP_Kt_d,       \
+cufftComplex *SGP_Kt_dc, *SGP_Kr_dc, *SGP_St_dc, *SGP_Sr_dc, *Gr_dc, *Gphi_dc, *Gr_d, *Gphi_d, *SGP_Kt_d,       \
 *SGP_Kr_d, *SGP_Sr_d, *SGP_St_d;
 
 
@@ -187,13 +188,15 @@ __host__ int main (int argc, char *argv[])
   ReadVariables(ParameterFile);
 
   /* Si elige la opcion SelfGravity, se crean los planes 2D de la cufft */
+
+  printf("self%d\n",SelfGravity );
   if (SelfGravity){
-    if ((cufftPlan2d(&planf, 2*NRAD, NSEC, CUFFT_Z2Z)) != CUFFT_SUCCESS){
+    if ((cufftPlan2d(&planf, 2*NRAD, NSEC, CUFFT_C2C)) != CUFFT_SUCCESS){
       printf("cufft plan error\n");
       exit(-1);
     }
 
-    if ((cufftPlan2d(&planb, 2*NRAD, NSEC , CUFFT_Z2Z)) != CUFFT_SUCCESS){
+    if ((cufftPlan2d(&planb, 2*NRAD, NSEC , CUFFT_C2C)) != CUFFT_SUCCESS){
       printf("cufft plan error\n");
       exit(-1);
     }
@@ -266,6 +269,12 @@ __host__ int main (int argc, char *argv[])
   Cudamalloc(Label, Dens, Vrad, Vtheta);
 
   if (SelfGravity){
+    if(!LogGrid){
+      printf("A logarithmic grid is needed to compute self-gravity with polar method. Try again\n" );
+      exit(-1);
+    }
+
+
     SGP_eps = THICKNESSSMOOTHING * ASPECTRATIO;
     SGP_rstep = logf(Radii[NRAD]/Radii[0])/(float)NRAD;
     SGP_tstep = 2.0*PI/(float)NSEC;
@@ -662,18 +671,18 @@ __host__ void Cudamalloc (float *Label, float *Dens, float *Vrad, float *Vtheta)
   /* cudaMalloc SelfGravity*/
 
   if (SelfGravity){
-    gpuErrchk(cudaMalloc((void**)&SGP_Kt_d,  2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&SGP_Kr_d,  2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&SGP_St_d,  2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&SGP_Sr_d,  2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&SGP_Kt_dc, 2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&SGP_Kr_dc, 2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&SGP_St_dc, 2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&SGP_Sr_dc, 2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&Gr_dc,     2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&Gphi_dc,   2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&Gr_d,      2*size_grid*sizeof(cufftDoubleComplex)));
-    gpuErrchk(cudaMalloc((void**)&Gphi_d,    2*size_grid*sizeof(cufftDoubleComplex)));
+    gpuErrchk(cudaMalloc((void**)&SGP_Kt_d,  2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&SGP_Kr_d,  2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&SGP_St_d,  2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&SGP_Sr_d,  2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&SGP_Kt_dc, 2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&SGP_Kr_dc, 2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&SGP_St_dc, 2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&SGP_Sr_dc, 2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&Gr_dc,     2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&Gphi_dc,   2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&Gr_d,      2*size_grid*sizeof(cufftComplex)));
+    gpuErrchk(cudaMalloc((void**)&Gphi_d,    2*size_grid*sizeof(cufftComplex)));
     gpuErrchk(cudaMalloc((void**)&Kr_aux_d,  2*size_grid*sizeof(float)));
     gpuErrchk(cudaMalloc((void**)&Kt_aux_d,  2*size_grid*sizeof(float)));
     gpuErrchk(cudaMalloc((void**)&SG_Accr_d, size_grid*sizeof(float)));

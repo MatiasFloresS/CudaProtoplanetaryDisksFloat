@@ -197,7 +197,8 @@ __host__ void ApplySubKeplerianBoundary(float *VthetaInt)
       pow(AspectRatioHost(Rmed[NRAD-1]), 2.0)*pow(Rmed[NRAD-1], 2.0*FLARINGINDEX)));
   }
   else{
-    Make1Dprofile (1);
+    printf("4\n" );
+    Make1Dprofile (2);
     gpuErrchk(cudaMemcpy(GLOBAL_AxiSGAccr, axifield_d, NRAD*sizeof(float), cudaMemcpyDeviceToHost));
 
     VKepIn = sqrt(G*1.0/Rmed[0] * (1.0 - (1.0+SIGMASLOPE-2.0*FLARINGINDEX) * \

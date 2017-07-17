@@ -272,7 +272,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
         printf("c");
       }
       else*/
-      //printf(".");
+      printf(".");
       //if (ZMPlus) compute_anisotropic_pressurecoeff(sys);
 
       ComputePressureField ();
@@ -302,7 +302,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
     PhysicalTime += dt;
 
    }
-  //printf("\n" );
+  printf("\n" );
 }
 
 
@@ -440,8 +440,9 @@ __host__ float ConstructSequence (float *u, float *v, int n)
 __host__ void Init_azimutalvelocity_withSG (float *Vtheta)
 {
   // !SGZeroMode
-  gpuErrchk(cudaMemcpy(SG_Accr, SG_Accr_d, size_grid*sizeof(float), cudaMemcpyDeviceToHost));
-  Make1Dprofile(1);
+  //gpuErrchk(cudaMemcpy(SG_Accr, SG_Accr_d, size_grid*sizeof(float), cudaMemcpyDeviceToHost));
+  printf("3\n" );
+  Make1Dprofile(2);
 
   Azimutalvelocity_withSGKernel<<<dimGrid2, dimBlock2>>>(Vtheta_d, Rmed_d, FLARINGINDEX, SIGMASLOPE, ASPECTRATIO,
     axifield_d, NRAD, NSEC);

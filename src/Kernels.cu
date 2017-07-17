@@ -634,7 +634,7 @@ __host__ void Make1Dprofile (int option)
   }
   /* GLOBAL_bufarray option */
   if (option == 2){
-    //gpuErrchk(cudaMemcpy(gridfield_d, SG_Accr_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
+    gpuErrchk(cudaMemcpy(gridfield_d, SG_Accr_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
     //gpuErrchk(cudaMemcpy(GLOBAL_AxiSGAccr_d, axifield_d, NRAD*sizeof(float), cudaMemcpyDeviceToHost));
   }
 
@@ -837,8 +837,8 @@ __global__ void StarRadKernel2 (float *Qbase2, float *Vrad, float *QStar, float 
     QStar[j] = QStar[j+nsec*nrad] = 0.0;
 }
 
-__global__ void ComputeFFTKernel (float *Radii, cufftDoubleComplex *SGP_Kr, cufftDoubleComplex *SGP_Kt, float SGP_eps, int nrad, int nsec,
-  cufftDoubleComplex *SGP_Sr, cufftDoubleComplex *SGP_St, float *Dens, float *Rmed, float *Kr_aux, float *Kt_aux)
+__global__ void ComputeFFTKernel (float *Radii, cufftComplex *SGP_Kr, cufftComplex *SGP_Kt, float SGP_eps, int nrad, int nsec,
+  cufftComplex *SGP_Sr, cufftComplex *SGP_St, float *Dens, float *Rmed, float *Kr_aux, float *Kt_aux)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
@@ -868,8 +868,8 @@ __global__ void ComputeFFTKernel (float *Radii, cufftDoubleComplex *SGP_Kr, cuff
 }
 
 
-__global__ void ComputeConvolutionKernel (cufftDoubleComplex *Gr, cufftDoubleComplex *Gphi, cufftDoubleComplex *SGP_Kr, cufftDoubleComplex *SGP_Kt,
-  cufftDoubleComplex *SGP_Sr, cufftDoubleComplex *SGP_St, int nsec, int nrad)
+__global__ void ComputeConvolutionKernel (cufftComplex *Gr, cufftComplex *Gphi, cufftComplex *SGP_Kr, cufftComplex *SGP_Kt,
+  cufftComplex *SGP_Sr, cufftComplex *SGP_St, int nsec, int nrad)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
@@ -891,7 +891,7 @@ __global__ void ComputeConvolutionKernel (cufftDoubleComplex *Gr, cufftDoubleCom
 
 
 __global__ void ComputeSgAccKernel (float *SG_Accr, float *SG_Acct, float *Dens , float SGP_rstep, float SGP_tstep,
-  float SGP_eps, int nrad, int nsec, float *Rmed, cufftDoubleComplex *Gr, cufftDoubleComplex *Gphi)
+  float SGP_eps, int nrad, int nsec, float *Rmed, cufftComplex *Gr, cufftComplex *Gphi)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;

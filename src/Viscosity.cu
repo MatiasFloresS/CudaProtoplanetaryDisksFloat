@@ -54,6 +54,7 @@ __host__ void ComputeViscousTerms (float *Vradial_d, float *Vazimutal_d, float *
 
   if (ViscosityAlpha){
     //gpuErrchk(cudaMemcpy(SoundSpeed, SoundSpeed_d, size_grid*sizeof(float), cudaMemcpyDeviceToHost));
+    printf("2\n" );
     Make1Dprofile (1);
   }
 
