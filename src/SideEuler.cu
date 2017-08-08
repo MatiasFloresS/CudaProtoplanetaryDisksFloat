@@ -26,7 +26,7 @@ extern dim3 dimGrid, dimBlock, dimBlock2, dimGrid2;
 
 extern float OmegaFrame;
 extern float *Rinf, *Rmed, *Rmed_d;
-
+extern float *HtoD;
 
 __host__ void ApplyBoundaryCondition (float *Dens, float *Energy, float *Vrad, float *Vtheta, float step)
 {
@@ -207,8 +207,17 @@ __host__ void ApplySubKeplerianBoundary(float *VthetaInt)
       pow(AspectRatioHost(Rmed[NRAD-1]), 2.0)*pow(Rmed[NRAD-1], 2.0*FLARINGINDEX)) - Rmed[NRAD-1]*GLOBAL_AxiSGAccr[NRAD-1]);
 
   }
+    for (int j=0; j<NSEC; j++)
+	HtoD[j] =  VKepIn - Rmed[0]*OmegaFrame;
+ 
+    gpuErrchk(cudaMemcpy(VthetaInt_d, HtoD  ,  NSEC*sizeof(float), cudaMemcpyHostToDevice));	
+	
+    for (int j=0; j<NSEC; j++)
+	HtoD[j] = VKepOut - Rmed[NRAD-1]*OmegaFrame;
 
-  ApplySubKeplerianBoundaryKernel<<<dimGrid, dimBlock>>>(VthetaInt_d, Rmed_d, OmegaFrame, NSEC, NRAD,
-    VKepIn, VKepOut);
-  gpuErrchk(cudaDeviceSynchronize());
+    gpuErrchk(cudaMemcpy(VthetaInt_d + (NRAD-1)*NSEC, HtoD, NSEC*sizeof(float), cudaMemcpyHostToDevice));
+
+  //ApplySubKeplerianBoundaryKernel<<<dimGrid, dimBlock>>>(VthetaInt_d, Rmed_d, OmegaFrame, NSEC, NRAD,
+  //  VKepIn, VKepOut);
+  //gpuErrchk(cudaDeviceSynchronize());
 }

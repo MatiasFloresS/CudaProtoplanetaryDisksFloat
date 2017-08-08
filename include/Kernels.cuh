@@ -9,9 +9,10 @@ inline void gpuAssert (cudaError_t code, const char *file, int line, bool abort=
    }
 }
 
-__global__ void Substep1Kernel (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potenial,
-  float *Rinf, float *invRinf, float *Vrad, float *VthetaInt, float *Vtheta, float *Rmed, float dt,
-  int nrad, int nsec, float OmegaFrame, int ZMPlus, float IMPOSEDDISKDRIFT, float SIGMASLOPE);
+__global__ void Substep1KernelVrad (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potential,
+  float *Rinf, float *invRinf, float *Vrad, float dt,  int nrad, int nsec, float OmegaFrame, float *Vtheta);
+
+__global__ void Substep1KernelVtheta (float *Pressure, float *Dens, float *Potential, float *VthetaInt, float *Vtheta, float dt, int nrad, int nsec, int ZMPlus, float *supp_torque, float *invdxtheta);
 
 __global__ void Substep2Kernel (float *Dens, float *VradInt, float *VthetaInt, float *TemperInt,
   int nrad, int nsec, float *invdiffRmed, float *invdiffRsup, float *DensInt, int Adiabaticc,
@@ -24,8 +25,6 @@ __global__ void Substep3Kernel (float *Dens, float *Qplus, float *viscosity_arra
 __global__ void Substep3Kernel2 (float *Dens, float *Qplus, float *viscosity_array, float *TAURR, float *TAURP,float *TAUPP,
   float *DivergenceVelocity, int nrad, int nsec, float *Rmed, int Cooling, float *EnergyNew, float dt, float *EnergyMed,
   float *SigmaMed, float *CoolingTimeMed, float *EnergyInt, float ADIABATICINDEX, float *QplusMed);
-
-
 
 __global__ void UpdateVelocitiesKernel (float *VthetaInt, float *VradInt, float *invRmed, float *Rmed, float *Rsup,
   float *Rinf, float *invdiffRmed, float *invdiffRsup, float *Dens, float *invRinf, float *TAURR,
@@ -86,9 +85,12 @@ __global__ void InitGasVelocitiesKernel (int nsec, int nrad, int SelfGravity, fl
 
 __host__ void Make1Dprofile (int option);
 
-__global__ void ViscousTermsKernel (float *Vradial, float *Vazimutal , float *DRR, float *DPP, float *DivergenceVelocity,
-  float *DRP, float *invdiffRsup, float *invRmed, float *Rsup, float *Rinf, float *invdiffRmed, int nrad,
-  int nsec, float *TAURR, float *TAUPP, float *dens, float *TAURP, float *invRinf, float *Rmed, float *viscosity_array_d);
+__global__ void ViscousTermsKernelDRP (float *Vradial, float *Vazimutal , float *DRR, float *DPP, float *DivergenceVelocity,
+  float *DRP, float *invdiffRsup, float *invRmed, float *Rsup, float *Rinf, float *invdiffRmed, int nrad, int nsec, 
+  float *invRinf, float invdphi);
+
+__global__ void ViscousTermsKernelTAURP (float *dens, float *viscosity_array_d, float *DRR, float *DPP, float onethird,
+  float *DivergenceVelocity, float *TAURR, float *TAUPP, float *TAURP, float *DRP, int nrad, int nsec);
 
 __global__ void LRMomentaKernel (float *RadMomP, float *RadMomM, float *ThetaMomP, float *ThetaMomM, float *Dens,
   float *Vrad, float *Vtheta, int nrad, int nsec, float *Rmed, float OmegaFrame);

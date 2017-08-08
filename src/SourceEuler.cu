@@ -31,6 +31,8 @@ extern float *Surf_d;
 extern float *example;
 extern float *invdiffRmed_d, *invRinf_d, *Rmed_d, *invRmed_d, *invdiffRsup_d, *Rsup_d;
 
+float *supp_torque, *supp_torque_d, *invdxtheta, *invdxtheta_d;
+
 float *invdiffRmed, *invRinf, *Rinf, *Rinf_d, *invRmed, *Rmed, *invdiffRsup, *Rsup;
 
 float *Vtheta_d, *Energy_d, *Vrad_d, *VradInt, *VthetaInt, *VradNew, *VthetaNew, *Vresidual_d, *Vradial_d, *Vazimutal_d;
@@ -272,7 +274,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
         printf("c");
       }
       else*/
-      printf(".");
+     // printf(".");
       //if (ZMPlus) compute_anisotropic_pressurecoeff(sys);
 
       ComputePressureField ();
@@ -300,9 +302,10 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
     init = init + 1;
     //cont+=1;
     PhysicalTime += dt;
+    //dtemp = DT;
 
    }
-  printf("\n" );
+ // printf("\n" );
 }
 
 
@@ -310,12 +313,26 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
 __host__ void Substep1 (float *Dens, float *Vrad, float *Vtheta, float dt, int initialization)
 {
   int selfgravityupdate;
-  if(initialization == 0) Substep1cudamalloc(Vrad, Vtheta);
+  
+  if(initialization == 0) {
+    Substep1cudamalloc(Vrad, Vtheta); 
+    for (int i=0 ; i<NRAD; i++){
+	supp_torque[i] = IMPOSEDDISKDRIFT*0.5*pow(Rmed[i], -2.5+SIGMASLOPE);
+	invdxtheta[i] = 1.0/(2.0*PI/(float)NSEC*Rmed[i]);	
+    }
+    gpuErrchk(cudaMemcpy(supp_torque_d, supp_torque, NRAD*sizeof(float), cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(invdxtheta_d, invdxtheta,  NRAD*sizeof(float), cudaMemcpyHostToDevice));
+		
+  }
+  
 
-  Substep1Kernel<<<dimGrid2, dimBlock2>>>(Pressure_d, Dens_d, VradInt_d, invdiffRmed_d, Potential_d, Rinf_d,
-    invRinf_d, Vrad_d, VthetaInt_d, Vtheta_d, Rmed_d,  dt, NRAD, NSEC, OmegaFrame, ZMPlus,
-    IMPOSEDDISKDRIFT, SIGMASLOPE);
+  Substep1KernelVrad<<<dimGrid2, dimBlock2>>>(Pressure_d, Dens_d, VradInt_d, invdiffRmed_d, Potential_d, Rinf_d,
+    invRinf_d, Vrad_d, dt, NRAD, NSEC, OmegaFrame, Vtheta_d);
+
+  Substep1KernelVtheta<<<dimGrid2, dimBlock2>>>(Pressure_d, Dens_d, Potential_d, VthetaInt_d, Vtheta_d, dt, 
+    NRAD, NSEC, ZMPlus, supp_torque_d, invdxtheta_d);
   gpuErrchk(cudaDeviceSynchronize());
+		
 
 
   if (SelfGravity){
@@ -343,6 +360,8 @@ __host__ void Substep1 (float *Dens, float *Vrad, float *Vtheta, float dt, int i
 
 __host__ void Substep2 (float dt)
 {
+  gpuErrchk(cudaMemset(DensInt_d, 0, size_grid*sizeof(float)));
+  gpuErrchk(cudaMemset(TemperInt_d, 0, size_grid*sizeof(float)));
   Substep2Kernel<<<dimGrid2, dimBlock2>>>(Dens_d, VradInt_d, VthetaInt_d, TemperInt_d, NRAD, NSEC, invdiffRmed_d,
   invdiffRsup_d, DensInt_d, Adiabatic, Rmed_d, dt, VradNew_d, VthetaNew_d, Energy_d, EnergyInt_d);
   gpuErrchk(cudaDeviceSynchronize());
@@ -514,6 +533,11 @@ __host__ void Substep1cudamalloc (float *Vrad, float *Vtheta)
 {
   gpuErrchk(cudaMemcpy(QplusMed_d, QplusMed,             (NRAD+1)*sizeof(float), cudaMemcpyHostToDevice));
   gpuErrchk(cudaMemcpy(CoolingTimeMed_d, CoolingTimeMed, (NRAD+1)*sizeof(float), cudaMemcpyHostToDevice));
+  gpuErrchk(cudaMalloc((void**)&invdxtheta_d,   NRAD*sizeof(float)));
+  gpuErrchk(cudaMalloc((void**)&supp_torque_d,   NRAD*sizeof(float)));
+  supp_torque        = (float *)malloc((NRAD)*sizeof(float));
+  invdxtheta         = (float *)malloc((NRAD)*sizeof(float));
+
 }
 
 

@@ -236,7 +236,6 @@ __host__ void InitGasVelocities (float *Vrad, float *Vtheta)
 
   if (ViscosityAlpha){
     //gpuErrchk(cudaMemcpy(SoundSpeed, SoundSpeed_d, size_grid*sizeof(float), cudaMemcpyDeviceToHost));
-    printf("1\n" );
     Make1Dprofile(1);
   }
 

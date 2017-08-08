@@ -1,4 +1,4 @@
-##################
+################
 ### Gas parameters
 ##################                
 AspectRatio     	0.0297109 		# disc aspect ratio H/R at R=1 (code's unit of length)
@@ -26,8 +26,8 @@ Transport       	FARGO			# FARGO handling of CFL timestep (otherwise set to STAN
 ##################
 ### Grid parameters
 ##################			
-Nrad            	400			# Number of grid cells along radial direction
-Nsec            	900			# Number of grid cells along azimuthal direction
+Nrad            	2048			# Number of grid cells along radial direction
+Nsec            	2048			# Number of grid cells along azimuthal direction
 Rmin            	1.0			# Grid's inner edge
 Rmax            	80.0			# Grid's outer edge
 InnerBoundary   	EVANESCENT		# Boundary condition at inner and outer edges
@@ -40,7 +40,7 @@ IndirectTerm    	YES			# do we include the indirect acceleration?
 ##################			
 ### Outputs control parameters
 ##################
-Ntot		 	500			# NtotxDT/2Pi sets the total number of orbits (at R=1)
+Ntot		 	1			# NtotxDT/2Pi sets the total number of orbits (at R=1)
 Ninterm          	1			# Ninterm*DT/2pi sets the time in orbits between outputs
 DT		 	15.89534122527376	
 OutputDir        	hd/			# Name of outputs directory (local)

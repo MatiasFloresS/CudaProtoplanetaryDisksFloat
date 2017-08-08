@@ -30,6 +30,8 @@ extern float *Surf, *invSurf, *powRmed;
 extern float *DensStar;
 extern float *Potential;
 
+
+float invdphi, onethird, dphi;
 float *example;
 
 /* float host arrays */
@@ -77,6 +79,7 @@ static int      InnerOutputCounter = 0, StillWriteOneOutput;
 extern int  Corotating;
 extern int  SelfGravity, SGZeroMode, Adiabatic;
 float           ScalingFactor = 1.0;
+float *HtoD;
 
 dim3 dimGrid2, dimBlock2, dimGrid, dimBlock, dimGrid3, dimGrid4;
 
@@ -90,8 +93,9 @@ cufftComplex *SGP_Kt_dc, *SGP_Kr_dc, *SGP_St_dc, *SGP_Sr_dc, *Gr_dc, *Gphi_dc, *
 __host__ int main (int argc, char *argv[])
 {
   int device;
-  printf("enter gpu device: ");
-  scanf("%d", &device);
+  //printf("enter gpu device: ");
+  //scanf("%d", &device);
+  device = 0;
 
 
   //cudaSetDevice(1); Using gpu nvidia m4000 8 gb
@@ -248,6 +252,10 @@ __host__ int main (int argc, char *argv[])
   FillPolar1DArrays ();
   force = AllocateForce (dimfxy);
 
+  dphi = 2.0*PI/(float)NSEC;
+  invdphi = 1.0/dphi;
+  onethird = 1.0/3.0;
+
   /* string to char configplanet */
   strncpy(configplanet, PLANETCONFIG.c_str(), sizeof(configplanet));
   configplanet[sizeof(configplanet)-1]=0;
@@ -320,7 +328,7 @@ __host__ int main (int argc, char *argv[])
 
     if (InnerOutputCounter == 1){
       InnerOutputCounter = 0;
-      WriteBigPlanetSystemFile (sys, TimeStep);
+     // WriteBigPlanetSystemFile (sys, TimeStep);
       //UpdateLog(force, sys, Dens, Energy, TimeStep, PhysicalTime, dimfxy);
     }
 
@@ -328,9 +336,9 @@ __host__ int main (int argc, char *argv[])
       /* Outputs are done here */
       //printf("%d\n", i);
       TimeToWrite = YES;
-      DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
-      SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
-      WritePlanetSystemFile (sys, TimeStep);
+      //DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
+      //SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
+      //WritePlanetSystemFile (sys, TimeStep);
     }
     else TimeToWrite = NO;
     /* Algorithm loop begins here *
@@ -647,6 +655,8 @@ __host__ void CreateArrays () // ordenar
   mean_dens2      = (float *)malloc(NSEC*sizeof(float));
   mean_energy     = (float *)malloc(NSEC*sizeof(float));
   mean_energy2    = (float *)malloc(NSEC*sizeof(float));
+  
+  HtoD 		  = (float *)malloc(NSEC*sizeof(float)); 
 
 
   if (SelfGravity){

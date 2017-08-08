@@ -10,45 +10,38 @@ extern float PhysicalTime, PhysicalTimeInitial;
 
 extern dim3 dimGrid, dimBlock, dimGrid4;
 
-__global__ void Substep1Kernel (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potential,
-   float *Rinf, float *invRinf, float *Vrad, float *VthetaInt, float *Vtheta, float *Rmed, float dt,
-   int nrad, int nsec, float OmegaFrame, int ZMPlus, float IMPOSEDDISKDRIFT, float SIGMASLOPE)
+__global__ void Substep1KernelVrad (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potential,
+   float *Rinf, float *invRinf, float *Vrad, float dt, int nrad, int nsec, float OmegaFrame, float *Vtheta)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
-  float gradp, gradphi, vradint, vradint2, supp_torque, dxtheta, invdxtheta;
-  float vt2;
+  float gradp_phi, vt2;
 
   // i=1->nrad , j=0->nsec
   if (i > 0 && i<nrad && j<nsec){
-    gradp = (Pressure[i*nsec + j] - Pressure[(i-1)*nsec + j])*2.0/(Dens[i*nsec + j] + Dens[(i-1)*nsec + j])*invdiffRmed[i];
-    gradphi = (Potential[i*nsec + j] - Potential[(i-1)*nsec + j])*invdiffRmed[i];
+    gradp_phi = (Pressure[i*nsec + j] - Pressure[(i-1)*nsec + j])*2.0/(Dens[i*nsec + j] + Dens[(i-1)*nsec + j])*invdiffRmed[i] \
+    + (Potential[i*nsec + j] - Potential[(i-1)*nsec + j])*invdiffRmed[i];
     vt2 = Vtheta[i*nsec + j] + Vtheta[i*nsec + (j+1)%nsec] + Vtheta[(i-1)*nsec + j] + Vtheta[(i-1)*nsec + (j+1)%nsec];
     vt2 = vt2/4.0  +OmegaFrame*Rinf[i];
     vt2 = vt2*vt2;
 
-    vradint = -gradp - gradphi;
-    vradint2 = vradint + vt2*invRinf[i];
-    VradInt[i*nsec + j] = Vrad[i*nsec+j] + dt*vradint2;
-
-
+    VradInt[i*nsec + j] = Vrad[i*nsec+j] + dt*(-gradp_phi + vt2*invRinf[i]);
   }
+}
 
+__global__ void Substep1KernelVtheta (float *Pressure, float *Dens, float *Potential, float *VthetaInt, float *Vtheta, float dt, int nrad, int nsec, int ZMPlus, float *supp_torque, float *invdxtheta){
+
+  int j = threadIdx.x + blockDim.x*blockIdx.x;
+  int i = threadIdx.y + blockDim.y*blockIdx.y;
+  float gradp_phi;
   // i=0->nrad ,   j=0->nsec
   if (i<nrad && j<nsec){
-
-    supp_torque = IMPOSEDDISKDRIFT*0.5*powf(Rmed[i], -2.5+SIGMASLOPE);
-    dxtheta = 2.0*PI/(float)nsec*Rmed[i];
-    invdxtheta = 1.0/dxtheta;
-
-    gradp = (Pressure[i*nsec + j] - Pressure[i*nsec + ((j-1)+nsec)%nsec])*2.0/(Dens[i*nsec +j] +Dens[i*nsec + ((j-1)+nsec)%nsec]) \
-    *invdxtheta;
-
     //if (ZMPlus) gradp *= 1; //gradp *= SG_aniso_coeff;  Definir mas adelante SG_aniso_coeff
 
-    gradphi = (Potential[i*nsec+ j] - Potential[i*nsec + ((j-1)+nsec)%nsec])*invdxtheta;
-    VthetaInt[i*nsec + j] =  Vtheta[i*nsec+j] - dt*(gradp+gradphi);
-    VthetaInt[i*nsec + j] += dt*supp_torque;
+    gradp_phi = (Pressure[i*nsec+j] - Pressure[i*nsec+((j-1)+nsec)%nsec])*2.0/(Dens[i*nsec+j] + Dens[i*nsec + ((j-1)+nsec)%nsec])\
+    *invdxtheta[i] + (Potential[i*nsec+j] - Potential[i*nsec + ((j-1)+nsec)%nsec])*invdxtheta[i];
+  
+    VthetaInt[i*nsec + j] =  Vtheta[i*nsec+j] - dt*(gradp_phi)+ dt*supp_torque[i];
   }
 }
 
@@ -414,22 +407,18 @@ __global__ void Substep2Kernel (float *Dens, float *VradInt, float *VthetaInt, f
   int i = threadIdx.y + blockDim.y*blockIdx.y;
 
   float dv;
-
+	
   if (i<nrad && j<nsec){
 
-    dv = VradInt[(i+1)*nsec + j] - VradInt[i*nsec + j];
+    dv = VradInt[(i+1)*nsec + j] - VradInt[i*nsec+j];
 
     if (dv < 0.0)
-      DensInt[i*nsec + j] = CVNR*CVNR*Dens[i*nsec+j]*dv*dv;
-    else
-      DensInt[i*nsec + j] = 0.0;
-
-    dv = VthetaInt[i*nsec + (j+1)%nsec] - VthetaInt[i*nsec + j];
+      DensInt[i*nsec+j] = CVNR*CVNR*Dens[i*nsec+j]*dv*dv;
+   
+    dv = VthetaInt[i*nsec + (j+1)%nsec] - VthetaInt[i*nsec+j];
 
     if (dv < 0.0)
-      TemperInt[i*nsec + j] = CVNR*CVNR*Dens[i*nsec+j]*dv*dv;
-    else
-      TemperInt[i*nsec + j] = 0.0;
+      TemperInt[i*nsec+j] = CVNR*CVNR*Dens[i*nsec+j]*dv*dv;
   }
 }
 
@@ -730,19 +719,14 @@ __global__ void ComputeForceKernel (float *CellAbscissa, float *CellOrdinate, fl
 
 
 
-__global__ void ViscousTermsKernel (float *Vradial, float *Vazimutal , float *DRR, float *DPP, float *DivergenceVelocity,
-  float *DRP, float *invdiffRsup, float *invRmed, float *Rsup, float *Rinf, float *invdiffRmed, int nrad,
-  int nsec, float *TAURR, float *TAUPP, float *dens, float *TAURP, float *invRinf, float *Rmed, float *viscosity_array_d)
+__global__ void ViscousTermsKernelDRP (float *Vradial, float *Vazimutal , float *DRR, float *DPP, float *DivergenceVelocity,
+  float *DRP, float *invdiffRsup, float *invRmed, float *Rsup, float *Rinf, float *invdiffRmed, int nrad, int nsec,
+  float *invRinf, float invdphi)
 {
    int j = threadIdx.x + blockDim.x*blockIdx.x;
    int i = threadIdx.y + blockDim.y*blockIdx.y;
 
-   float dphi, invdphi, onethird, viscosity;
    if (i<nrad && j<nsec){ /* Drr, Dpp and divV computation */
-     dphi = 2.0*M_PI/(float)nsec;
-     invdphi = 1.0/dphi;
-     onethird = 1.0/3.0;
-
      DRR[i*nsec + j] = (Vradial[(i+1)*nsec + j] - Vradial[i*nsec + j])*invdiffRsup[i];
      DPP[i*nsec + j] = (Vazimutal[i*nsec + (j+1)%nsec] - Vazimutal[i*nsec + j])*invdphi*invRmed[i]+0.5* \
        (Vradial[(i+1)*nsec + j]+Vradial[i*nsec + j])*invRmed[i];
@@ -754,21 +738,28 @@ __global__ void ViscousTermsKernel (float *Vradial, float *Vazimutal , float *DR
      if (i > 0) DRP[i*nsec + j] = 0.5*(Rinf[i]*(Vazimutal[i*nsec + j]*invRmed[i] - Vazimutal[(i-1)*nsec + j]*invRmed[i-1])* \
           invdiffRmed[i] + (Vradial[i*nsec + j] - Vradial[i*nsec + ((j-1)+nsec)%nsec])*invdphi*invRinf[i]);
    }
+ }
+
+
+__global__ void ViscousTermsKernelTAURP (float *dens, float *viscosity_array_d, float *DRR, float *DPP, float onethird,
+  float *DivergenceVelocity, float *TAURR, float *TAUPP, float *TAURP, float *DRP, int nrad, int nsec)
+{
+   int j = threadIdx.x + blockDim.x*blockIdx.x;
+   int i = threadIdx.y + blockDim.y*blockIdx.y;
 
    if (i<nrad && j<nsec){ /* TAUrr and TAUpp computation */
-
 
      TAURR[i*nsec + j] = 2.0*dens[i*nsec + j]*viscosity_array_d[i]*(DRR[i*nsec + j] - onethird*DivergenceVelocity[i*nsec + j]);
      TAUPP[i*nsec + j] = 2.0*dens[i*nsec + j]*viscosity_array_d[i]*(DPP[i*nsec + j] - onethird*DivergenceVelocity[i*nsec + j]);
 
      if (i > 0){
-      TAURP[i*nsec + j] = 2.0*0.25*(dens[i*nsec + j] + dens[(i-1)*nsec + j] + \
+      TAURP[i*nsec + j] = 2.0*0.25*(dens[i*nsec + j] + dens[(i-1)*nsec + j] + \ 
       dens[i*nsec + ((j-1)+nsec)%nsec] + dens[(i-1)*nsec + ((j-1)+nsec)%nsec])* \
       viscosity_array_d[i]*DRP[i*nsec + j];
 
     }
    }
- }
+}
 
 
 __global__ void LRMomentaKernel (float *RadMomP, float *RadMomM, float *ThetaMomP, float *ThetaMomM, float *Dens,
@@ -1413,18 +1404,3 @@ __device__ float AspectRatioDevice(float r, float ASPECTRATIO, float TRANSITIONW
 }*/
 
 
-__global__ void ApplySubKeplerianBoundaryKernel(float *VthetaInt, float *Rmed, float OmegaFrame, int nsec,
-  int nrad, float VKepIn, float VKepOut)
-{
-  int j = threadIdx.x + blockDim.x*blockIdx.x;
-  int i = 0;
-
-  if (j<nsec)
-    VthetaInt[i*nsec + j] = VKepIn - Rmed[i]*OmegaFrame;
-
-  i = nrad - 1;
-
-  if (j<nsec)
-    VthetaInt[i*nsec + j] =  VKepOut - Rmed[i]*OmegaFrame;
-
-}
