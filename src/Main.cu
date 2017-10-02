@@ -40,6 +40,7 @@ float *fieldsrc, *vt_int, *GLOBAL_bufarray, *CoolingTimeMed, *QplusMed , *viscos
 float *cs1, *Qplus, *QStar, *Qbase, *cs0, *csnrm1, *csnrm2, *mean_dens, *mean_dens2;
 float *mean_energy, *mean_energy2, *array, *mdcp0;
 float *SG_Accr, *SG_Acct, *GLOBAL_AxiSGAccr;
+float *cs_0r, *cs_1r, *cs_2r, *cs_3r;
 
 /* float device arrays */
 float *Surf_d, *powRmed_d, *invSurf_d;
@@ -655,7 +656,13 @@ __host__ void CreateArrays () // ordenar
   mean_dens2      = (float *)malloc(NSEC*sizeof(float));
   mean_energy     = (float *)malloc(NSEC*sizeof(float));
   mean_energy2    = (float *)malloc(NSEC*sizeof(float));
-  
+
+  cs_0r           = (float *)malloc(NSEC*sizeof(float));  
+  cs_1r           = (float *)malloc(NSEC*sizeof(float));
+  cs_2r           = (float *)malloc(NSEC*sizeof(float));
+  cs_3r           = (float *)malloc(NSEC*sizeof(float));
+
+
   HtoD 		  = (float *)malloc(NSEC*sizeof(float)); 
 
 

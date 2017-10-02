@@ -10,9 +10,7 @@ inline void gpuAssert (cudaError_t code, const char *file, int line, bool abort=
 }
 
 __global__ void Substep1KernelVrad (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potential,
-  float *Rinf, float *invRinf, float *Vrad, float dt,  int nrad, int nsec, float OmegaFrame, float *Vtheta);
-
-__global__ void Substep1KernelVtheta (float *Pressure, float *Dens, float *Potential, float *VthetaInt, float *Vtheta, float dt, int nrad, int nsec, int ZMPlus, float *supp_torque, float *invdxtheta);
+  float *Rinf, float *invRinf, float *Vrad, float dt,  int nrad, int nsec, float OmegaFrame, float *Vtheta, float *VthetaInt, int ZMPlus, float *supp_torque, float *invdxtheta);
 
 __global__ void Substep2Kernel (float *Dens, float *VradInt, float *VthetaInt, float *TemperInt,
   int nrad, int nsec, float *invdiffRmed, float *invdiffRsup, float *DensInt, int Adiabaticc,
@@ -28,7 +26,7 @@ __global__ void Substep3Kernel2 (float *Dens, float *Qplus, float *viscosity_arr
 
 __global__ void UpdateVelocitiesKernel (float *VthetaInt, float *VradInt, float *invRmed, float *Rmed, float *Rsup,
   float *Rinf, float *invdiffRmed, float *invdiffRsup, float *Dens, float *invRinf, float *TAURR,
-  float *TAURP, float *TAUPP, float DeltaT, int nrad, int nsec);
+  float *TAURP, float *TAUPP, float DeltaT, int nrad, int nsec, float invdphi);
 
 __global__ void InitComputeAccelKernel (float *CellAbscissa, float *CellOrdinate, float *Rmed, int nsec, int nrad);
 
@@ -87,7 +85,8 @@ __host__ void Make1Dprofile (int option);
 
 __global__ void ViscousTermsKernelDRP (float *Vradial, float *Vazimutal , float *DRR, float *DPP, float *DivergenceVelocity,
   float *DRP, float *invdiffRsup, float *invRmed, float *Rsup, float *Rinf, float *invdiffRmed, int nrad, int nsec, 
-  float *invRinf, float invdphi);
+  float *invRinf, float invdphi, float *dens, float *viscosity_array_d, float onethird, float *TAURR, float *TAUPP,
+  float *TAURP);
 
 __global__ void ViscousTermsKernelTAURP (float *dens, float *viscosity_array_d, float *DRR, float *DPP, float onethird,
   float *DivergenceVelocity, float *TAURR, float *TAUPP, float *TAURP, float *DRP, int nrad, int nsec);
@@ -187,7 +186,7 @@ __device__ inline void MyAtomicAdd (float *address, float value);
 
 __global__ void kernel(float *Dens, float *VradInt, float *VthetaInt, float *TemperInt, int nrad,
   int nsec, float *invdiffRmed, float *invdiffRsup, float *DensInt, int Adiabatic, float *Rmed,
-  float dt, float *VradNew, float *VthetaNew, float *Energy, float *EnergyInt);
+  float dt, float *VradNew, float *VthetaNew, float *Energy, float *EnergyInt, float *invdxtheta);
 
 __device__ float FViscosityDevice(float r, float VISCOSITY, int ViscosityAlpha, float *Rmed, float ALPHAVISCOSITY,
   float CAVITYWIDTH, float CAVITYRADIUS, float CAVITYRATIO, float PhysicalTime, float PhysicalTimeInitial,

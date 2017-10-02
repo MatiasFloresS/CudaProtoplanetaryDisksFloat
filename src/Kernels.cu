@@ -11,38 +11,34 @@ extern float PhysicalTime, PhysicalTimeInitial;
 extern dim3 dimGrid, dimBlock, dimGrid4;
 
 __global__ void Substep1KernelVrad (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potential,
-   float *Rinf, float *invRinf, float *Vrad, float dt, int nrad, int nsec, float OmegaFrame, float *Vtheta)
+   float *Rinf, float *invRinf, float *Vrad, float dt, int nrad, int nsec, float OmegaFrame, float *Vtheta, float *VthetaInt, int ZMPlus, 
+   float *supp_torque, float *invdxtheta)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
-  float gradp_phi, vt2;
+  float vt2, gradp, gradphi;
 
   // i=1->nrad , j=0->nsec
   if (i > 0 && i<nrad && j<nsec){
-    gradp_phi = (Pressure[i*nsec + j] - Pressure[(i-1)*nsec + j])*2.0/(Dens[i*nsec + j] + Dens[(i-1)*nsec + j])*invdiffRmed[i] \
-    + (Potential[i*nsec + j] - Potential[(i-1)*nsec + j])*invdiffRmed[i];
-    vt2 = Vtheta[i*nsec + j] + Vtheta[i*nsec + (j+1)%nsec] + Vtheta[(i-1)*nsec + j] + Vtheta[(i-1)*nsec + (j+1)%nsec];
-    vt2 = vt2/4.0  +OmegaFrame*Rinf[i];
+    gradp = (Pressure[i*nsec + j] - Pressure[(i-1)*nsec + j])*2.0/(Dens[i*nsec + j] + Dens[(i-1)*nsec + j])*invdiffRmed[i];
+    gradphi = (Potential[i*nsec + j] - Potential[(i-1)*nsec + j])*invdiffRmed[i];
+
+    vt2 = (Vtheta[i*nsec + j] + Vtheta[i*nsec + (j+1)%nsec] + Vtheta[(i-1)*nsec + j] + Vtheta[(i-1)*nsec + (j+1)%nsec]);
+    vt2 = vt2/4.0 + OmegaFrame*Rinf[i];
     vt2 = vt2*vt2;
 
-    VradInt[i*nsec + j] = Vrad[i*nsec+j] + dt*(-gradp_phi + vt2*invRinf[i]);
+    VradInt[i*nsec + j] = Vrad[i*nsec+j] + dt*(-gradp-gradphi + vt2*invRinf[i]);
   }
-}
 
-__global__ void Substep1KernelVtheta (float *Pressure, float *Dens, float *Potential, float *VthetaInt, float *Vtheta, float dt, int nrad, int nsec, int ZMPlus, float *supp_torque, float *invdxtheta){
-
-  int j = threadIdx.x + blockDim.x*blockIdx.x;
-  int i = threadIdx.y + blockDim.y*blockIdx.y;
-  float gradp_phi;
-  // i=0->nrad ,   j=0->nsec
   if (i<nrad && j<nsec){
     //if (ZMPlus) gradp *= 1; //gradp *= SG_aniso_coeff;  Definir mas adelante SG_aniso_coeff
 
-    gradp_phi = (Pressure[i*nsec+j] - Pressure[i*nsec+((j-1)+nsec)%nsec])*2.0/(Dens[i*nsec+j] + Dens[i*nsec + ((j-1)+nsec)%nsec])\
-    *invdxtheta[i] + (Potential[i*nsec+j] - Potential[i*nsec + ((j-1)+nsec)%nsec])*invdxtheta[i];
-  
-    VthetaInt[i*nsec + j] =  Vtheta[i*nsec+j] - dt*(gradp_phi)+ dt*supp_torque[i];
-  }
+    gradp = (Pressure[i*nsec+j] - Pressure[i*nsec+((j-1)+nsec)%nsec])*2.0/(Dens[i*nsec+j] + Dens[i*nsec + ((j-1)+nsec)%nsec])\
+    *invdxtheta[i];
+    gradphi =  (Potential[i*nsec+j] - Potential[i*nsec + ((j-1)+nsec)%nsec])*invdxtheta[i];
+
+    VthetaInt[i*nsec + j] =  Vtheta[i*nsec+j] - dt*(gradp + gradphi)+ dt*supp_torque[i];
+  } 
 }
 
 
@@ -110,49 +106,44 @@ __global__ void Substep3Kernel2 (float *Dens, float *Qplus, float *viscosity_arr
 
 __global__ void UpdateVelocitiesKernel (float *VthetaInt, float *VradInt, float *invRmed, float *Rmed, float *Rsup,
   float *Rinf, float *invdiffRmed, float *invdiffRsup, float *Dens, float *invRinf, float *TAURR, float *TAURP,
-  float *TAUPP, float DeltaT, int nrad, int nsec)
+  float *TAUPP, float DeltaT, int nrad, int nsec, float invdphi)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
-
-  float dphi, invdphi;
 
   /* Now we can update velocities
      with the viscous source term
      of Navier-Stokes equation */
 
   /* vtheta first */
-  if (i > 0 && i<nrad-1 && j<nsec){
-    dphi = 2.0*M_PI/(float)nsec;
-    invdphi = 1.0/dphi;
 
-    VthetaInt[i*nsec +j] += DeltaT*invRmed[i]*((Rsup[i]*TAURP[(i+1)*nsec+ j] - Rinf[i]*TAURP[i*nsec +j])*invdiffRsup[i] + \
-    (TAUPP[i*nsec +j] - TAUPP[i*nsec + ((j-1)+nsec)%nsec])*invdphi + 0.5*(TAURP[i*nsec + j] + TAURP[(i+1)*nsec +j]))/ \
-    (0.5*(Dens[i*nsec +j]+Dens[i*nsec + ((j-1)+nsec)%nsec]));
+  
+  if (i > 0 && i<nrad-1 && j<nsec){
+
+     VthetaInt[i*nsec +j] += DeltaT*invRmed[i]*((Rsup[i]*TAURP[(i+1)*nsec+j] - Rinf[i]*TAURP[i*nsec+j])*invdiffRsup[i] + \
+    (TAUPP[i*nsec+j] - TAUPP[i*nsec+((j-1)+nsec)%nsec])*invdphi + 0.5*(TAURP[i*nsec+j] + TAURP[(i+1)*nsec + j]))/ \
+    (0.5*(Dens[i*nsec + j]+Dens[i*nsec+((j-1)+nsec)%nsec]));
   }
 
   /* now vrad */
   if (i > 0 && i<nrad && j<nsec){
-    dphi = 2.0*M_PI/(float)nsec;
-    invdphi = 1.0/dphi;
 
     VradInt[i*nsec +j] += DeltaT*invRinf[i]*((Rmed[i]*TAURR[i*nsec +j] - Rmed[i-1]*TAURR[(i-1)*nsec + j])*invdiffRmed[i] + \
-    (TAURP[i*nsec + (j+1)%nsec] - TAURP[i*nsec + j])*invdphi - 0.5*(TAUPP[i*nsec +j] + TAUPP[(i-1)*nsec + j]))/ \
+    (TAURP[i*nsec + (j+1)%nsec] - TAURP[i*nsec + j])*invdphi- 0.5*(TAUPP[i*nsec +j] + TAUPP[(i-1)*nsec + j]))/ \
     (0.5*(Dens[i*nsec +j] + Dens[(i-1)*nsec + j]));
   }
 }
 
 
-
+// listo -> revisar si conviene calcular 2pij/nsec
 __global__ void InitComputeAccelKernel (float *CellAbscissa, float *CellOrdinate, float *Rmed, int nsec, int nrad)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
 
-
   if (i<nrad && j<nsec){
-    CellAbscissa[i*nsec+j] = Rmed[i] * cosf((2.0*PI*(float)j)/(float)nsec);
-    CellOrdinate[i*nsec+j] = Rmed[i] * sinf((2.0*PI*(float)j)/(float)nsec);
+    CellAbscissa[i*nsec+j] = Rmed[i] * cosf(2.0*PI*(float)j/(float)nsec);
+    CellOrdinate[i*nsec+j] = Rmed[i] * sinf(2.0*PI*(float)j/(float)nsec);
   }
 }
 
@@ -169,9 +160,9 @@ __global__ void ComputeSoundSpeedKernel (float *SoundSpeed, float *Dens, float *
     if (!Adiabatic){
       AspectRatio = AspectRatioDevice(Rmed[i], ASPECTRATIO, TRANSITIONWIDTH, TRANSITIONRADIUS, TRANSITIONRATIO,
         PhysicalTime, PhysicalTimeInitial, LAMBDADOUBLING);
-      SoundSpeed[i*nsec + j] = AspectRatio*sqrt(G*1.0/Rmed[i])*powf(Rmed[i], FLARINGINDEX);
+      SoundSpeed[i*nsec + j] = AspectRatio*sqrtf(G*1.0/Rmed[i])*powf(Rmed[i], FLARINGINDEX);
     }
-    else SoundSpeed[i*nsec + j] = sqrt(ADIABATICINDEX*(ADIABATICINDEX-1.0)*Energy[i*nsec + j]/Dens[i*nsec + j]);
+    else SoundSpeed[i*nsec + j] = sqrtf(ADIABATICINDEX*(ADIABATICINDEX-1.0)*Energy[i*nsec + j]/Dens[i*nsec + j]);
 
   }
 }
@@ -217,7 +208,7 @@ __global__ void InitLabelKernel (float *Label, float xp, float yp, float rhill, 
     angle = (float)j / (float)nsec*2.0*PI;
     x = Rmed[i] * cosf(angle);
     y = Rmed[i] * sinf(angle);
-    distance = sqrt((x - xp) * (x - xp) + (y - yp)*(y -yp));
+    distance = sqrtf((x - xp) * (x - xp) + (y - yp)*(y -yp));
 
     if (distance < rhill) Label[i*nsec + j] = 1.0;
     else Label[i*nsec + j] = 0.0;
@@ -406,19 +397,22 @@ __global__ void Substep2Kernel (float *Dens, float *VradInt, float *VthetaInt, f
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
 
-  float dv;
+  float dv, cvnrdens;
 	
   if (i<nrad && j<nsec){
 
     dv = VradInt[(i+1)*nsec + j] - VradInt[i*nsec+j];
-
+    cvnrdens = CVNR*CVNR*Dens[i*nsec+j];
     if (dv < 0.0)
-      DensInt[i*nsec+j] = CVNR*CVNR*Dens[i*nsec+j]*dv*dv;
-   
+      DensInt[i*nsec+j] = cvnrdens*dv*dv;
+    else
+      DensInt[i*nsec+j] = 0.0;
     dv = VthetaInt[i*nsec + (j+1)%nsec] - VthetaInt[i*nsec+j];
 
     if (dv < 0.0)
-      TemperInt[i*nsec+j] = CVNR*CVNR*Dens[i*nsec+j]*dv*dv;
+      TemperInt[i*nsec+j] = cvnrdens*dv*dv;
+    else
+      TemperInt[i*nsec+j] = 0.0;
   }
 }
 
@@ -426,45 +420,27 @@ __global__ void Substep2Kernel (float *Dens, float *VradInt, float *VthetaInt, f
 
 __global__ void kernel(float *Dens, float *VradInt, float *VthetaInt, float *TemperInt, int nrad,
   int nsec, float *invdiffRmed, float *invdiffRsup, float *DensInt, int Adiabatic, float *Rmed,
-  float dt, float *VradNew, float *VthetaNew, float *Energy, float *EnergyInt)
+  float dt, float *VradNew, float *VthetaNew, float *Energy, float *EnergyInt, float *invdxtheta)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
 
-  float dens, densint, dxtheta, invdxtheta, dens2, tempint;
-  if (i>0 && i<nrad && j<nsec){
-
-    dens = Dens[i*nsec + j] + Dens[(i-1)*nsec + j];
-    densint = DensInt[i*nsec+j] - DensInt[(i-1)*nsec + j];
-
-    VradNew[i*nsec+j] = VradInt[i*nsec+j] - dt*2.0/dens*densint*invdiffRmed[i];
-  }
-
   if (i<nrad && j<nsec){
-    dxtheta = 2.0*PI/(float)nsec*Rmed[i];
-    invdxtheta = 1.0/dxtheta;
-
-    dens2 = Dens[i*nsec + j] + Dens[i*nsec + ((j-1)+nsec)%nsec];
-    tempint = (TemperInt[i*nsec+j] - TemperInt[i*nsec + ((j-1)+nsec)%nsec]);
-
-    VthetaNew[i*nsec + j] = VthetaInt[i*nsec + j] - dt*2.0/dens2*tempint*invdxtheta;
-
-  }
+	VthetaNew[i*nsec + j] = VthetaInt[i*nsec + j] - dt*2.0/(Dens[i*nsec + j] + Dens[i*nsec + ((j-1)+nsec)%nsec])*((TemperInt[i*nsec+j] - TemperInt[i*nsec + ((j-1)+nsec)%nsec]))*invdxtheta[i];
 
 
   /* If gas disk is adiabatic, we add artificial viscosity as a source */
   /* term for advection of thermal energy polargrid */
   if (Adiabatic){
-    if (i<nrad && j<nsec){
-      dxtheta = 2.0*PI/(float)nsec*Rmed[i];
-      invdxtheta = 1.0/dxtheta;
-
       EnergyInt[i*nsec + j] = Energy[i*nsec + j] - dt*DensInt[i*nsec + j]* \
         (VradInt[(i+1)*nsec + j] - VradInt[i*nsec + j])*invdiffRsup[i] - \
-        dt*TemperInt[i*nsec + j]*(VthetaInt[i*nsec + (j+1)%nsec] - VthetaInt[i*nsec + j])* invdxtheta;
-    }
+        dt*TemperInt[i*nsec + j]*(VthetaInt[i*nsec + (j+1)%nsec] - VthetaInt[i*nsec + j])* invdxtheta[i];
+    
   }
 
+  if (i>0) VradNew[i*nsec+j] = VradInt[i*nsec+j] - dt*2.0/(Dens[i*nsec + j] + Dens[(i-1)*nsec + j])*(DensInt[i*nsec+j] - DensInt[(i-1)*nsec + j])*invdiffRmed[i];
+
+   }
 }
 
 
@@ -572,7 +548,6 @@ __global__ void NonReflectingBoundaryKernel2 (float *Dens, float *Energy, int i_
   Vrad[i*nsec + j] = 2.0*Vrad_med-Vrad[(i+1)*nsec + j];
   i = nrad-1;
 
-  Vrad_med = SoundSpeed[i*nsec + j]*(Dens[(i-1)*nsec + j]-SigmaMed2)/SigmaMed2;
   Vrad[i*nsec + j] = 2.*Vrad_med - Vrad[(i-1)*nsec + j];
 
 }
@@ -654,8 +629,8 @@ __global__ void InitGasVelocitiesKernel (int nsec, int nrad, int SelfGravity, fl
       }
 
       if (!SelfGravity){
-        omega = sqrt(G*1.0/r/r/r);
-        Vtheta[i*nsec + j] = omega*r*sqrt(1.0-powf(ASPECTRATIO,2.0)*powf(r,2.0*FLARINGINDEX)* \
+        omega = sqrtf(G*1.0/r/r/r);
+        Vtheta[i*nsec + j] = omega*r*sqrtf(1.0-powf(ASPECTRATIO,2.0)*powf(r,2.0*FLARINGINDEX)* \
         (1.+SIGMASLOPE-2.0*FLARINGINDEX));
       }
       Vtheta[i*nsec + j ] -= OmegaFrame*r;
@@ -721,7 +696,7 @@ __global__ void ComputeForceKernel (float *CellAbscissa, float *CellOrdinate, fl
 
 __global__ void ViscousTermsKernelDRP (float *Vradial, float *Vazimutal , float *DRR, float *DPP, float *DivergenceVelocity,
   float *DRP, float *invdiffRsup, float *invRmed, float *Rsup, float *Rinf, float *invdiffRmed, int nrad, int nsec,
-  float *invRinf, float invdphi)
+  float *invRinf, float invdphi, float *dens, float *viscosity_array_d, float onethird, float *TAURR, float *TAUPP, float *TAURP)
 {
    int j = threadIdx.x + blockDim.x*blockIdx.x;
    int i = threadIdx.y + blockDim.y*blockIdx.y;
@@ -737,6 +712,17 @@ __global__ void ViscousTermsKernelDRP (float *Vradial, float *Vazimutal , float 
 
      if (i > 0) DRP[i*nsec + j] = 0.5*(Rinf[i]*(Vazimutal[i*nsec + j]*invRmed[i] - Vazimutal[(i-1)*nsec + j]*invRmed[i-1])* \
           invdiffRmed[i] + (Vradial[i*nsec + j] - Vradial[i*nsec + ((j-1)+nsec)%nsec])*invdphi*invRinf[i]);
+
+     TAURR[i*nsec + j] = 2.0*dens[i*nsec + j]*viscosity_array_d[i]*(DRR[i*nsec + j] - onethird*DivergenceVelocity[i*nsec + j]);
+     TAUPP[i*nsec + j] = 2.0*dens[i*nsec + j]*viscosity_array_d[i]*(DPP[i*nsec + j] - onethird*DivergenceVelocity[i*nsec + j]);
+
+     if (i > 0){
+      TAURP[i*nsec + j] = 2.0*0.25*(dens[i*nsec + j] + dens[(i-1)*nsec + j] + \
+      dens[i*nsec + ((j-1)+nsec)%nsec] + dens[(i-1)*nsec + ((j-1)+nsec)%nsec])* \
+      viscosity_array_d[i]*DRP[i*nsec + j];
+
+    }
+
    }
  }
 
@@ -767,13 +753,15 @@ __global__ void LRMomentaKernel (float *RadMomP, float *RadMomM, float *ThetaMom
 {
    int j = threadIdx.x + blockDim.x*blockIdx.x;
    int i = threadIdx.y + blockDim.y*blockIdx.y;
-
+   
+   float romega = 0.0;
    if (i<nrad && j<nsec){
+     romega = Rmed[i]*OmegaFrame;
      RadMomP[i*nsec + j] = Dens[i*nsec + j] * Vrad[(i+1)*nsec + j]; // (i+1)*nsec
      RadMomM[i*nsec + j] = Dens[i*nsec + j] * Vrad[i*nsec + j];
      /* it is the angular momentum -> ThetaMomP */
-     ThetaMomP[i*nsec + j] = Dens[i*nsec + j] * (Vtheta[i*nsec + (j+1)%nsec]+Rmed[i]*OmegaFrame)*Rmed[i];
-     ThetaMomM[i*nsec + j] = Dens[i*nsec + j] * (Vtheta[i*nsec + j]+Rmed[i]*OmegaFrame)*Rmed[i];
+     ThetaMomP[i*nsec + j] = Dens[i*nsec + j] * (Vtheta[i*nsec + (j+1)%nsec]+romega)*Rmed[i];
+     ThetaMomM[i*nsec + j] = Dens[i*nsec + j] * (Vtheta[i*nsec + j]+romega)*Rmed[i];
    }
  }
 
@@ -822,10 +810,9 @@ __global__ void StarRadKernel2 (float *Qbase2, float *Vrad, float *QStar, float 
     else
       QStar[i*nsec + j] = Qbase2[i*nsec + j]-(Rmed[i+1]-Rmed[i]+Vrad[i*nsec + j]*dt)*0.5*dq[i+j*nrad];
 
+    if (i == 0)
+      QStar[j] = QStar[j+nsec*nrad] = 0.0;
   }
-
-  if (i == 0 && j<nsec)
-    QStar[j] = QStar[j+nsec*nrad] = 0.0;
 }
 
 __global__ void ComputeFFTKernel (float *Radii, cufftComplex *SGP_Kr, cufftComplex *SGP_Kt, float SGP_eps, int nrad, int nsec,
@@ -1088,7 +1075,7 @@ __global__ void ComputeConstantResidualKernel (float *VMed, float *invRmed, int 
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
 
-  float maxfrac, Ntilde, Nround, invdt, dpinvns;
+  float maxfrac, Ntilde, Nround, dpinvns;
   long nitemp;
 
   if (i<nrad && j<nsec){
@@ -1097,14 +1084,13 @@ __global__ void ComputeConstantResidualKernel (float *VMed, float *invRmed, int 
     else
       maxfrac = 0.0;
 
-    invdt = 1.0/dt;
     dpinvns = 2.0*PI/(float)nsec;
     Ntilde = VMed[i]*invRmed[i]*dt*(float)nsec/2.0/PI;
     Nround = floor(Ntilde+0.5);
     nitemp = (long)Nround;
     Nshift[i] = (long)nitemp;
 
-    Vtheta[i*nsec + j] = (Ntilde-Nround)*Rmed[i]*invdt*dpinvns;
+    Vtheta[i*nsec + j] = (Ntilde-Nround)*Rmed[i]/dt*dpinvns;
     if (maxfrac < 0.5){
       NoSplitAdvection[i] = YES;
       VthetaRes[i*nsec + j] += Vtheta[i*nsec + j];
@@ -1299,6 +1285,7 @@ __global__ void ConditionCFLKernel2D1 (float *Rsup, float *Rinf, float *Rmed, in
     invdt4 = max2(dvr/dxrad, dvt/dxtheta);
     invdt4*= 4.0*CVNR*CVNR;
     dt = CFLSECURITY/sqrt(invdt1*invdt1+invdt2*invdt2+invdt3*invdt3+invdt4*invdt4);
+    DT2D[i*nsec + j] = dt; // array nrad*nsec size dt
     DT2D[i*nsec + j] = dt; // array nrad*nsec size dt
   }
 }

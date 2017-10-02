@@ -302,7 +302,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
     init = init + 1;
     //cont+=1;
     PhysicalTime += dt;
-    //dtemp = DT;
+    dtemp = DT;
 
    }
  // printf("\n" );
@@ -317,9 +317,9 @@ __host__ void Substep1 (float *Dens, float *Vrad, float *Vtheta, float dt, int i
   if(initialization == 0) {
     Substep1cudamalloc(Vrad, Vtheta); 
     for (int i=0 ; i<NRAD; i++){
-	supp_torque[i] = IMPOSEDDISKDRIFT*0.5*pow(Rmed[i], -2.5+SIGMASLOPE);
-	invdxtheta[i] = 1.0/(2.0*PI/(float)NSEC*Rmed[i]);	
-    }
+    	supp_torque[i] = IMPOSEDDISKDRIFT*0.5*pow(Rmed[i], -2.5+SIGMASLOPE);
+    	invdxtheta[i] = 1.0/(2.0*PI/(float)NSEC*Rmed[i]);	
+     }
     gpuErrchk(cudaMemcpy(supp_torque_d, supp_torque, NRAD*sizeof(float), cudaMemcpyHostToDevice));
     gpuErrchk(cudaMemcpy(invdxtheta_d, invdxtheta,  NRAD*sizeof(float), cudaMemcpyHostToDevice));
 		
@@ -327,10 +327,7 @@ __host__ void Substep1 (float *Dens, float *Vrad, float *Vtheta, float dt, int i
   
 
   Substep1KernelVrad<<<dimGrid2, dimBlock2>>>(Pressure_d, Dens_d, VradInt_d, invdiffRmed_d, Potential_d, Rinf_d,
-    invRinf_d, Vrad_d, dt, NRAD, NSEC, OmegaFrame, Vtheta_d);
-
-  Substep1KernelVtheta<<<dimGrid2, dimBlock2>>>(Pressure_d, Dens_d, Potential_d, VthetaInt_d, Vtheta_d, dt, 
-    NRAD, NSEC, ZMPlus, supp_torque_d, invdxtheta_d);
+    invRinf_d, Vrad_d, dt, NRAD, NSEC, OmegaFrame, Vtheta_d, VthetaInt_d, ZMPlus, supp_torque_d, invdxtheta_d);
   gpuErrchk(cudaDeviceSynchronize());
 		
 
@@ -360,8 +357,6 @@ __host__ void Substep1 (float *Dens, float *Vrad, float *Vtheta, float dt, int i
 
 __host__ void Substep2 (float dt)
 {
-  gpuErrchk(cudaMemset(DensInt_d, 0, size_grid*sizeof(float)));
-  gpuErrchk(cudaMemset(TemperInt_d, 0, size_grid*sizeof(float)));
   Substep2Kernel<<<dimGrid2, dimBlock2>>>(Dens_d, VradInt_d, VthetaInt_d, TemperInt_d, NRAD, NSEC, invdiffRmed_d,
   invdiffRsup_d, DensInt_d, Adiabatic, Rmed_d, dt, VradNew_d, VthetaNew_d, Energy_d, EnergyInt_d);
   gpuErrchk(cudaDeviceSynchronize());
@@ -371,7 +366,7 @@ __host__ void Substep2 (float dt)
 __host__ void host (float dt)
 {
   kernel<<<dimGrid2, dimBlock2>>>(Dens_d, VradInt_d, VthetaInt_d, TemperInt_d, NRAD, NSEC, invdiffRmed_d,
-  invdiffRsup_d, DensInt_d, Adiabatic, Rmed_d, dt, VradNew_d, VthetaNew_d, Energy_d, EnergyInt_d);
+  invdiffRsup_d, DensInt_d, Adiabatic, Rmed_d, dt, VradNew_d, VthetaNew_d, Energy_d, EnergyInt_d, invdxtheta_d);
   gpuErrchk(cudaDeviceSynchronize());
 }
 
@@ -511,21 +506,21 @@ __host__ void ComputeTemperatureField ()
 __host__ void ActualiseGasVtheta (float *Vtheta, float *VthetaNew)
 {
   gpuErrchk(cudaMemcpy(Vtheta_d, VthetaNew_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
-  gpuErrchk(cudaDeviceSynchronize());
+  //gpuErrchk(cudaDeviceSynchronize());
 }
 
 
 __host__ void ActualiseGasVrad (float *Vrad, float *VradNew)
 {
   gpuErrchk(cudaMemcpy(Vrad_d, VradNew_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
-  gpuErrchk(cudaDeviceSynchronize());
+  //gpuErrchk(cudaDeviceSynchronize());
 }
 
 
 __host__ void ActualiseGasEnergy (float *Energy, float *EnergyNew)
 {
   gpuErrchk(cudaMemcpy(Energy_d, EnergyNew_d, size_grid*sizeof(float), cudaMemcpyDeviceToDevice));
-  gpuErrchk(cudaDeviceSynchronize());
+  //gpuErrchk(cudaDeviceSynchronize());
 }
 
 
