@@ -9,8 +9,11 @@ inline void gpuAssert (cudaError_t code, const char *file, int line, bool abort=
    }
 }
 
-__global__ void Substep1KernelVrad (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potential,
-  float *Rinf, float *invRinf, float *Vrad, float dt,  int nrad, int nsec, float OmegaFrame, float *Vtheta, float *VthetaInt, int ZMPlus, float *supp_torque, float *invdxtheta);
+
+__global__ void Substep1KernelVrad (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potential, float *Rinf, float *Vrad, float dt, int nrad, int nsec, float OmegaFrame, float *Vtheta);
+
+__global__ void Substep1KernelVtheta (float *Pressure, float *Dens,float *Potential, float dt, int nrad, int nsec, float *Vtheta, float *VthetaInt, int ZMPlus, float *supp_torque, float *invdxtheta);
+
 
 __global__ void Substep2Kernel (float *Dens, float *VradInt, float *VthetaInt, float *TemperInt,
   int nrad, int nsec, float *invdiffRmed, float *invdiffRsup, float *DensInt, int Adiabaticc,

@@ -302,7 +302,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
     init = init + 1;
     //cont+=1;
     PhysicalTime += dt;
-    dtemp = DT;
+//    dtemp = DT;
 
    }
  // printf("\n" );
@@ -325,9 +325,12 @@ __host__ void Substep1 (float *Dens, float *Vrad, float *Vtheta, float dt, int i
 		
   }
   
+  Substep1KernelVrad<<<dimGrid2, dimBlock2>>>(Pressure_d, Dens_d, VradInt_d, invdiffRmed_d, Potential_d, Rinf_d, Vrad_d, dt, NRAD, NSEC, OmegaFrame, Vtheta_d);
 
-  Substep1KernelVrad<<<dimGrid2, dimBlock2>>>(Pressure_d, Dens_d, VradInt_d, invdiffRmed_d, Potential_d, Rinf_d,
-    invRinf_d, Vrad_d, dt, NRAD, NSEC, OmegaFrame, Vtheta_d, VthetaInt_d, ZMPlus, supp_torque_d, invdxtheta_d);
+  gpuErrchk(cudaDeviceSynchronize());
+
+
+ Substep1KernelVtheta<<<dimGrid2, dimBlock2>>>(Pressure_d, Dens_d, Potential_d, dt, NRAD, NSEC, Vtheta_d, VthetaInt_d, ZMPlus, supp_torque_d, invdxtheta_d);
   gpuErrchk(cudaDeviceSynchronize());
 		
 
