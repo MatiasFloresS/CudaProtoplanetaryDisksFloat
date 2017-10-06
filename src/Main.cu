@@ -337,8 +337,8 @@ __host__ int main (int argc, char *argv[])
       /* Outputs are done here */
       //printf("%d\n", i);
       TimeToWrite = YES;
-      //DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
-      //SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
+      DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
+      SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
       //WritePlanetSystemFile (sys, TimeStep);
     }
     else TimeToWrite = NO;

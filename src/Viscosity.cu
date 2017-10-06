@@ -65,9 +65,9 @@ __host__ void ComputeViscousTerms (float *Vradial_d, float *Vazimutal_d, float *
     DRP_d, invdiffRsup_d, invRmed_d, Rsup_d, Rinf_d, invdiffRmed_d, NRAD, NSEC, invRinf_d, invdphi, Dens_d, viscosity_array_d,     onethird, TAURR_d, TAUPP_d, TAURP_d);
   gpuErrchk(cudaDeviceSynchronize());
 
- // ViscousTermsKernelTAURP<<<dimGrid2, dimBlock2>>>(Dens_d, viscosity_array_d, DRR_d, DPP_d, onethird, DivergenceVelocity_d,
- //   TAURR_d, TAUPP_d, TAURP_d, DRP_d, NRAD, NSEC);
- // gpuErrchk(cudaDeviceSynchronize());
+  ViscousTermsKernelTAURP<<<dimGrid2, dimBlock2>>>(Dens_d, viscosity_array_d, DRR_d, DPP_d, onethird, DivergenceVelocity_d,
+    TAURR_d, TAUPP_d, TAURP_d, DRP_d, NRAD, NSEC);
+  gpuErrchk(cudaDeviceSynchronize());
 
 }
 

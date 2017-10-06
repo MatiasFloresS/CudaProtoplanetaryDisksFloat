@@ -302,7 +302,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
     init = init + 1;
     //cont+=1;
     PhysicalTime += dt;
-//    dtemp = DT;
+    //dtemp = DT;
 
    }
  // printf("\n" );
