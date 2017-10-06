@@ -14,7 +14,6 @@ extern float  PhysicalTime, PhysicalTimeInitial;
 extern float *Vrad_d, *Dens_d, *Energy_d, *Vtheta_d, *VthetaInt_d, *DensInt_d, *Work_d, *SoundSpeed, *SoundSpeed_d;
 
 extern float *mean_dens_d, *mean_energy_d;
-extern float *cs_0r, *cs_1r, *cs_2r, *cs_3r;
 extern float *cs0_d, *cs1_d, *csnrm1_d, *csnrm2_d, *mean_dens_d2, *mean_energy_d2, *viscosity_array_d;
 extern float *SigmaMed_d, *EnergyMed_d, *GLOBAL_bufarray_d, *Qbase_d;
 
@@ -69,6 +68,7 @@ __host__ void NonReflectingBoundary (float *Dens, float *Energy, float *Vrad)
   gpuErrchk(cudaDeviceSynchronize());
 
   ReduceMean(Dens, Energy);
+
   MinusMeanKernel<<<dimGrid, dimBlock>>>(Dens_d, Energy_d, SigmaMed[0], mean_dens_r, mean_dens_r2, mean_energy_r,
   mean_energy_r2, EnergyMed[0], NSEC, NRAD, SigmaMed[NRAD-1], EnergyMed[NRAD-1]);
   gpuErrchk(cudaDeviceSynchronize());
@@ -78,66 +78,18 @@ __host__ void NonReflectingBoundary (float *Dens, float *Energy, float *Vrad)
 
 __host__ void ReduceCs ()
 {
-  gpuErrchk(cudaMemcpy(cs_0r, SoundSpeed_d  ,  NSEC*sizeof(float), cudaMemcpyDeviceToHost));
-  gpuErrchk(cudaMemcpy(cs_1r, SoundSpeed_d + NSEC ,  NSEC*sizeof(float), cudaMemcpyDeviceToHost));
-  gpuErrchk(cudaMemcpy(cs_2r, SoundSpeed_d + (NRAD-2)*NSEC, NSEC*sizeof(float), cudaMemcpyDeviceToHost));
-  gpuErrchk(cudaMemcpy(cs_3r, SoundSpeed_d + (NRAD-1)*NSEC, NSEC*sizeof(float), cudaMemcpyDeviceToHost));
-
-  cs0_r = 0.0;
-  cs1_r = 0.0;
-  csnrm1_r = 0.0;
-  csnrm2_r = 0.0;
-
-  for (int i = 0; i<NSEC; i++){
-	cs0_r += cs_0r[i];
-        cs1_r += cs_1r[i];
-	csnrm1_r += cs_2r[i];
-	csnrm2_r += cs_3r[i];
-  }
-  cs0_r /= NSEC;
-  cs1_r /= NSEC;
-  csnrm1_r /= NSEC;
-  csnrm2_r /= NSEC;
-  
-  /*
-
   ReduceCsKernel<<<dimGrid, dimBlock>>> (SoundSpeed_d, cs0_d, cs1_d, csnrm1_d, csnrm2_d, NSEC, NRAD);
   gpuErrchk(cudaDeviceSynchronize());
 
- 
   cs0_r    = DeviceReduce(cs0_d, NSEC) / NSEC;
   cs1_r    = DeviceReduce(cs1_d, NSEC) / NSEC;
   csnrm1_r = DeviceReduce(csnrm1_d, NSEC) / NSEC;
   csnrm2_r = DeviceReduce(csnrm2_d, NSEC) / NSEC;
-  */
-  
 }
 
 
 __host__ void ReduceMean (float *Dens, float *Energy)
 {
-  gpuErrchk(cudaMemcpy(cs_0r, Dens_d  ,  NSEC*sizeof(float), cudaMemcpyDeviceToHost));
-  gpuErrchk(cudaMemcpy(cs_1r, Dens_d + (NRAD-1)*NSEC,  NSEC*sizeof(float), cudaMemcpyDeviceToHost));
-  gpuErrchk(cudaMemcpy(cs_2r, Energy_d, NSEC*sizeof(float), cudaMemcpyDeviceToHost));
-  gpuErrchk(cudaMemcpy(cs_3r, Energy_d + (NRAD-1)*NSEC, NSEC*sizeof(float), cudaMemcpyDeviceToHost));
-
-  mean_dens_r = 0.0;
-  mean_dens_r2 = 0.0;
-  mean_energy_r = 0.0;
-  mean_energy_r2 = 0.0;
-
-  for (int i = 0; i<NSEC; i++){
-        mean_dens_r += cs_0r[i];
-        mean_dens_r2 += cs_1r[i];
-        mean_energy_r += cs_2r[i];
-        mean_energy_r2 += cs_3r[i];
-  }
-  mean_dens_r /= NSEC;
-  mean_dens_r2 /= NSEC;
-  mean_energy_r /= NSEC;
-  mean_energy_r2 /= NSEC;
-
-  /*
   ReduceMeanKernel<<<dimGrid, dimBlock>>>(Dens_d, Energy_d, NSEC, mean_dens_d, mean_energy_d, mean_dens_d2, mean_energy_d2, NRAD);
   gpuErrchk(cudaDeviceSynchronize());
 
@@ -145,7 +97,6 @@ __host__ void ReduceMean (float *Dens, float *Energy)
   mean_dens_r2   = DeviceReduce(mean_dens_d2, NSEC)   / NSEC;
   mean_energy_r  = DeviceReduce(mean_energy_d, NSEC)  / NSEC;
   mean_energy_r2 = DeviceReduce(mean_energy_d2, NSEC) / NSEC;
-  */
 }
 
 

@@ -15,7 +15,7 @@ extern float *invdiffRsup_d, *Rsup_d, *Rsup;
 
 
 extern float *Dens_d, *Vrad_d, *Vtheta_d, *Vradial_d, *Vazimutal_d, *VradInt, *VthetaInt_d, *VradInt_d, *VthetaInt;
-extern float invdphi;
+
 
 float *DivergenceVelocity, *DRP, *DRR, *DPP, *TAURR, *TAURP, *TAUPP;
 float *DivergenceVelocity_d, *DRP_d, *DRR_d, *DPP_d, *TAURR_d, *TAURP_d, *TAUPP_d;
@@ -26,7 +26,7 @@ extern dim3 dimGrid2, dimBlock2;
 __host__ void UpdateVelocitiesWithViscosity(float *VradInt, float *VthetaInt, float *Dens, float DeltaT)
 {
   UpdateVelocitiesKernel<<<dimGrid2, dimBlock2>>>(VthetaInt_d, VradInt_d, invRmed_d, Rmed_d, Rsup_d, Rinf_d,
-    invdiffRmed_d, invdiffRsup_d,  Dens_d, invRinf_d, TAURR_d, TAURP_d, TAUPP_d, DeltaT, NRAD, NSEC, invdphi);
+    invdiffRmed_d, invdiffRsup_d,  Dens_d, invRinf_d, TAURR_d, TAURP_d, TAUPP_d, DeltaT, NRAD, NSEC);
     gpuErrchk(cudaDeviceSynchronize());
 }
 
@@ -62,7 +62,7 @@ __host__ void ComputeViscousTerms (float *Vradial_d, float *Vazimutal_d, float *
   gpuErrchk(cudaMemcpy(viscosity_array_d, viscosity_array, (NRAD+1)*sizeof(float), cudaMemcpyHostToDevice));
 
   ViscousTermsKernelDRP<<<dimGrid2, dimBlock2>>>(Vradial_d, Vazimutal_d , DRR_d, DPP_d, DivergenceVelocity_d,
-    DRP_d, invdiffRsup_d, invRmed_d, Rsup_d, Rinf_d, invdiffRmed_d, NRAD, NSEC, invRinf_d, invdphi, Dens_d, viscosity_array_d,     onethird, TAURR_d, TAUPP_d, TAURP_d);
+    DRP_d, invdiffRsup_d, invRmed_d, Rsup_d, Rinf_d, invdiffRmed_d, NRAD, NSEC, invRinf_d, invdphi);
   gpuErrchk(cudaDeviceSynchronize());
 
   ViscousTermsKernelTAURP<<<dimGrid2, dimBlock2>>>(Dens_d, viscosity_array_d, DRR_d, DPP_d, onethird, DivergenceVelocity_d,

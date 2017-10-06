@@ -1,4 +1,4 @@
-CFLAGS = -c -w -O3 -Xptxas -O3
+CFLAGS = -c -w
 CUFFTFLAG = -lcufft
 LDFLAGS = -lcuda -lcudart
 INC_DIRS = -Iinclude
