@@ -38,7 +38,7 @@ __host__ void UpdateLog (Force *force, PlanetarySystem *sys, float *Dens, float 
     r = sqrt(x*x+y*y);
     m = sys->mass[i];
     a = sqrt(x*x+y*y);
-    rh = pow(m/3., 1./3.)*a+1e-15;
+    rh = pow(m/3., 1./3.)*a+1e-15;    
 
     if (RocheSmoothing) smoothing = r*pow(m/3.,1./3.)*ROCHESMOOTHING;
     else smoothing = Compute_smoothing(r);
@@ -104,7 +104,7 @@ __host__ void ComputeForce (Force *force, float *Dens, float x, float y, float r
 {
   float *globalforce;
   int k;
-
+  float hillcutfactor, hill_cut = 1.0;
   globalforce = force->GlobalForce;
 
   for (k = 0; k < dimfxy; k++) {
@@ -113,8 +113,11 @@ __host__ void ComputeForce (Force *force, float *Dens, float x, float y, float r
     gpuErrchk(cudaMemset(fyi_d, 0, NRAD*NSEC*sizeof(float)));
     gpuErrchk(cudaMemset(fyo_d, 0, NRAD*NSEC*sizeof(float)));
 
+    hillcutfactor = (float) k / (float)(dimfxy-1);
+    if (k!=0) rh *= hillcutfactor;
+
     ComputeForceKernel<<<dimGrid2, dimBlock2>>>(CellAbscissa_d, CellOrdinate_d, Surf_d, Dens_d, x, y, rsmoothing,
-      NSEC, NRAD, a, Rmed_d, dimfxy, rh, fxi_d, fxo_d, fyi_d, fyo_d, k);
+      NSEC, NRAD, a, Rmed_d, rh, fxi_d, fxo_d, fyi_d, fyo_d, k, hill_cut);
     gpuErrchk(cudaDeviceSynchronize());
 
     globalforce[k]            = DeviceReduce(fxi_d, NRAD*NSEC);

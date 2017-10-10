@@ -26,7 +26,7 @@ extern dim3 dimGrid, dimBlock, dimBlock2, dimGrid2;
 
 extern float OmegaFrame;
 extern float *Rinf, *Rmed, *Rmed_d;
-extern float *HtoD;
+extern float *HtoD, *sinj_d, *cosj_d;
 
 __host__ void ApplyBoundaryCondition (float *Dens, float *Energy, float *Vrad, float *Vtheta, float step)
 {
@@ -164,7 +164,7 @@ __host__ void InitComputeAccel ()
 
   InitComputeAccelDevice();
 
-  InitComputeAccelKernel<<<dimGrid2, dimBlock2>>>(CellAbscissa_d, CellOrdinate_d, Rmed_d, NSEC, NRAD);
+ InitComputeAccelKernel<<<dimGrid2, dimBlock2>>>(CellAbscissa_d, CellOrdinate_d, Rmed_d, NSEC, NRAD, sinj_d, cosj_d);
   gpuErrchk(cudaDeviceSynchronize());
 }
 

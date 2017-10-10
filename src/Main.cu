@@ -29,7 +29,7 @@ extern float *DRP, *DRR, *DPP, *TAURR, *TAURP, *TAUPP, *Radii;
 extern float *Surf, *invSurf, *powRmed;
 extern float *DensStar;
 extern float *Potential;
-
+extern float *supp_torque, *dxtheta, *invdxtheta, *supp_torque_d, *invdxtheta_d, *dxtheta_d;
 
 float invdphi, onethird, dphi;
 float *example;
@@ -40,6 +40,9 @@ float *fieldsrc, *vt_int, *GLOBAL_bufarray, *CoolingTimeMed, *QplusMed , *viscos
 float *cs1, *Qplus, *QStar, *Qbase, *cs0, *csnrm1, *csnrm2, *mean_dens, *mean_dens2;
 float *mean_energy, *mean_energy2, *array, *mdcp0;
 float *SG_Accr, *SG_Acct, *GLOBAL_AxiSGAccr;
+
+float *cosj, *sinj, dxphi;
+float *cosj_d, *sinj_d;
 
 /* float device arrays */
 float *Surf_d, *powRmed_d, *invSurf_d;
@@ -245,6 +248,22 @@ __host__ int main (int argc, char *argv[])
   Energy = (float *)malloc(size_grid*sizeof(float));
   Label  = (float *)malloc(size_grid*sizeof(float));
 
+  cosj  =  (float *)malloc(NSEC*sizeof(float));
+  sinj  =  (float *)malloc(NSEC*sizeof(float));
+
+  gpuErrchk(cudaMalloc((void**)&invdxtheta_d,   NRAD*sizeof(float)));
+  gpuErrchk(cudaMalloc((void**)&dxtheta_d,   NRAD*sizeof(float)));
+  gpuErrchk(cudaMalloc((void**)&supp_torque_d,   NRAD*sizeof(float)));
+
+
+  supp_torque        = (float *)malloc((NRAD)*sizeof(float));
+  invdxtheta         = (float *)malloc((NRAD)*sizeof(float));
+  dxtheta         = (float *)malloc((NRAD)*sizeof(float));
+
+  gpuErrchk(cudaMalloc((void**)&cosj_d, NSEC*sizeof(float)));
+  gpuErrchk(cudaMalloc((void**)&sinj_d, NSEC*sizeof(float)));
+  
+
   /* global arrays */
   CreateArrays();
 
@@ -255,6 +274,25 @@ __host__ int main (int argc, char *argv[])
   dphi = 2.0*PI/(float)NSEC;
   invdphi = 1.0/dphi;
   onethird = 1.0/3.0;
+
+
+  for (int i=0 ; i<NRAD; i++){
+     supp_torque[i] = IMPOSEDDISKDRIFT*0.5*pow(Rmed[i], -2.5+SIGMASLOPE);
+     dxtheta[i] = 2.0*PI/(float)NSEC*Rmed[i];
+     invdxtheta[i] = 1.0/dxtheta[i];
+  }
+    gpuErrchk(cudaMemcpy(supp_torque_d, supp_torque, NRAD*sizeof(float), cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(invdxtheta_d, invdxtheta,  NRAD*sizeof(float), cudaMemcpyHostToDevice));
+    gpuErrchk(cudaMemcpy(dxtheta_d, dxtheta,  NRAD*sizeof(float), cudaMemcpyHostToDevice));
+ 
+
+  for (int j = 0; j < NSEC; j++){
+     dxphi = 2.0*PI*(float)j/(float)NSEC;
+     cosj[j] = cos(dxphi);
+     sinj[j] = sin(dxphi);  
+  }
+  gpuErrchk(cudaMemcpy(cosj_d, cosj, NSEC*sizeof(float), cudaMemcpyHostToDevice));
+  gpuErrchk(cudaMemcpy(sinj_d, sinj, NSEC*sizeof(float), cudaMemcpyHostToDevice));
 
   /* string to char configplanet */
   strncpy(configplanet, PLANETCONFIG.c_str(), sizeof(configplanet));
@@ -336,8 +374,8 @@ __host__ int main (int argc, char *argv[])
       /* Outputs are done here */
       //printf("%d\n", i);
       TimeToWrite = YES;
-      DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
-      SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
+      //DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
+      //SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
       //WritePlanetSystemFile (sys, TimeStep);
     }
     else TimeToWrite = NO;

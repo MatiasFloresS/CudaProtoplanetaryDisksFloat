@@ -28,9 +28,9 @@ __global__ void Substep3Kernel2 (float *Dens, float *Qplus, float *viscosity_arr
 
 __global__ void UpdateVelocitiesKernel (float *VthetaInt, float *VradInt, float *invRmed, float *Rmed, float *Rsup,
   float *Rinf, float *invdiffRmed, float *invdiffRsup, float *Dens, float *invRinf, float *TAURR,
-  float *TAURP, float *TAUPP, float DeltaT, int nrad, int nsec);
+  float *TAURP, float *TAUPP, float DeltaT, int nrad, int nsec, float invdphi);
 
-__global__ void InitComputeAccelKernel (float *CellAbscissa, float *CellOrdinate, float *Rmed, int nsec, int nrad);
+__global__ void InitComputeAccelKernel (float *CellAbscissa, float *CellOrdinate, float *Rmed, int nsec, int nrad, float *sinj, float *cosj);
 
 __global__ void ComputeSoundSpeedKernel (float *SoundSpeed, float *Dens, float *Rmed, float *Energy, int nsec, int nrad,
   int Adiabatic, float ADIABATICINDEX, float FLARINGINDEX, float ASPECTRATIO, float TRANSITIONWIDTH,
@@ -58,8 +58,8 @@ __host__ float DeviceReduce (float *in, int N) ;
 __global__ void MultiplyPolarGridbyConstantKernel (float *Dens, int nrad, int nsec, float ScalingFactor);
 
 __global__ void ComputeForceKernel (float *CellAbscissa, float *CellOrdinate, float *Surf, float *Dens, float x,
-  float y, float rsmoothing, int nsec, int nrad, float a, float *Rmed, int dimfxy, float rh, float *fxi,
-  float *fxo, float *fyi, float *fyo, int k);
+  float y, float rsmoothing, int nsec, int nrad, float a, float *Rmed, float rh, float *fxi,
+  float *fxo, float *fyi, float *fyo, int k, float hill_cut);
 
 __global__ void OpenBoundaryKernel (float *Vrad, float *Dens, float *Energy, int nsec, float SigmaMed);
 
@@ -172,7 +172,7 @@ __device__ float AspectRatioDevice(float r, float ASPECTRATIO, float TRANSITIONW
 
 __global__ void ConditionCFLKernel2D1 (float *Rsup, float *Rinf, float *Rmed, int nsec, int nrad,
   float *Vresidual, float *Vtheta, float *Vmoy, int FastTransport, float *SoundSpeed, float *Vrad,
-  float *DT2D);
+  float *DT2D, float *dxtheta);
 
 __global__ void ConditionCFLKernel2D2 (float *newDT, float *DT2D, float *DT1D, float *Vmoy, float *invRmed,
   int *CFL, int nsec, int nrad, float DeltaT);
@@ -187,7 +187,7 @@ __device__ inline void MyAtomicAdd (float *address, float value);
 
 __global__ void kernel(float *Dens, float *VradInt, float *VthetaInt, float *TemperInt, int nrad,
   int nsec, float *invdiffRmed, float *invdiffRsup, float *DensInt, int Adiabatic, float *Rmed,
-  float dt, float *VradNew, float *VthetaNew, float *Energy, float *EnergyInt);
+  float dt, float *VradNew, float *VthetaNew, float *Energy, float *EnergyInt, float *invdxtheta);
 
 __device__ float FViscosityDevice(float r, float VISCOSITY, int ViscosityAlpha, float *Rmed, float ALPHAVISCOSITY,
   float CAVITYWIDTH, float CAVITYRADIUS, float CAVITYRATIO, float PhysicalTime, float PhysicalTimeInitial,

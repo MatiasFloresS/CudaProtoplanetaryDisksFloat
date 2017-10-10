@@ -31,7 +31,7 @@ extern float *Surf_d;
 extern float *example;
 extern float *invdiffRmed_d, *invRinf_d, *Rmed_d, *invRmed_d, *invdiffRsup_d, *Rsup_d;
 
-float *supp_torque, *supp_torque_d, *invdxtheta, *invdxtheta_d;
+float *supp_torque, *supp_torque_d, *invdxtheta, *invdxtheta_d, *dxtheta, *dxtheta_d;
 
 float *invdiffRmed, *invRinf, *Rinf, *Rinf_d, *invRmed, *Rmed, *invdiffRsup, *Rsup;
 
@@ -50,7 +50,7 @@ float *viscosity_array_d, *vt_cent_d, *DensStar_d, *DT1D_d;
 float *DT2D_d, *newDT_d;
 
 
-float *DT2D;
+float *DT2D, *DT1D, *newDT;
 float exces_mdcp = 0.0, mdcp1, MassTaper;
 
 int CrashedDens, CrashedEnergy;
@@ -91,7 +91,9 @@ __host__ void FillPolar1DArrays ()
   invdiffRmed = (float *)malloc((NRAD+1)*sizeof(float));
   vt_cent     = (float *)malloc((NRAD+1)*sizeof(float));
   powRmed     = (float *)malloc((NRAD+1)*sizeof(float));
-  DT2D     = (float *)malloc(NRAD*NSEC*sizeof(float));
+  DT2D        = (float *)malloc(NRAD*NSEC*sizeof(float));
+  DT1D        = (float *)malloc(NRAD*sizeof(float));
+  newDT       = (float *)malloc(NRAD*sizeof(float));
 
   char InputCharName[100];
   char OutputCharName[100];
@@ -302,7 +304,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
     init = init + 1;
     //cont+=1;
     PhysicalTime += dt;
-   // dtemp = DT;
+    dtemp = DT;
 
    }
  // printf("\n" );
@@ -316,13 +318,6 @@ __host__ void Substep1 (float *Dens, float *Vrad, float *Vtheta, float dt, int i
   
   if(initialization == 0) {
     Substep1cudamalloc(Vrad, Vtheta); 
-    for (int i=0 ; i<NRAD; i++){
-	supp_torque[i] = IMPOSEDDISKDRIFT*0.5*pow(Rmed[i], -2.5+SIGMASLOPE);
-	invdxtheta[i] = 1.0/(2.0*PI/(float)NSEC*Rmed[i]);	
-    }
-    gpuErrchk(cudaMemcpy(supp_torque_d, supp_torque, NRAD*sizeof(float), cudaMemcpyHostToDevice));
-    gpuErrchk(cudaMemcpy(invdxtheta_d, invdxtheta,  NRAD*sizeof(float), cudaMemcpyHostToDevice));
-		
   }
   
 
@@ -371,7 +366,7 @@ __host__ void Substep2 (float dt)
 __host__ void host (float dt)
 {
   kernel<<<dimGrid2, dimBlock2>>>(Dens_d, VradInt_d, VthetaInt_d, TemperInt_d, NRAD, NSEC, invdiffRmed_d,
-  invdiffRsup_d, DensInt_d, Adiabatic, Rmed_d, dt, VradNew_d, VthetaNew_d, Energy_d, EnergyInt_d);
+  invdiffRsup_d, DensInt_d, Adiabatic, Rmed_d, dt, VradNew_d, VthetaNew_d, Energy_d, EnergyInt_d, invdxtheta_d);
   gpuErrchk(cudaDeviceSynchronize());
 }
 
@@ -533,11 +528,6 @@ __host__ void Substep1cudamalloc (float *Vrad, float *Vtheta)
 {
   gpuErrchk(cudaMemcpy(QplusMed_d, QplusMed,             (NRAD+1)*sizeof(float), cudaMemcpyHostToDevice));
   gpuErrchk(cudaMemcpy(CoolingTimeMed_d, CoolingTimeMed, (NRAD+1)*sizeof(float), cudaMemcpyHostToDevice));
-  gpuErrchk(cudaMalloc((void**)&invdxtheta_d,   NRAD*sizeof(float)));
-  gpuErrchk(cudaMalloc((void**)&supp_torque_d,   NRAD*sizeof(float)));
-  supp_torque        = (float *)malloc((NRAD)*sizeof(float));
-  invdxtheta         = (float *)malloc((NRAD)*sizeof(float));
-
 }
 
 
@@ -552,7 +542,7 @@ __host__ int ConditionCFL (float *Vrad, float *Vtheta , float DeltaT)
 
 
   ConditionCFLKernel2D1<<<dimGrid2, dimBlock2>>>(Rsup_d, Rinf_d, Rmed_d, NSEC, NRAD,
-    Vresidual_d, Vtheta_d, Vmoy_d, FastTransport, SoundSpeed_d, Vrad_d, DT2D_d);
+    Vresidual_d, Vtheta_d, Vmoy_d, FastTransport, SoundSpeed_d, Vrad_d, DT2D_d, dxtheta_d);
   gpuErrchk(cudaDeviceSynchronize());
 
 
@@ -560,13 +550,29 @@ __host__ int ConditionCFL (float *Vrad, float *Vtheta , float DeltaT)
     CFL_d, NSEC, NRAD, DeltaT);
   gpuErrchk(cudaDeviceSynchronize());
 
-  ConditionCFLKernel2D3<<<dimGrid4, dimBlock>>>(newDT_d, DT2D_d, DT1D_d, Vmoy_d, invRmed_d,
-    CFL_d, NSEC, NRAD, DeltaT);
-  gpuErrchk(cudaDeviceSynchronize());
+  gpuErrchk(cudaMemcpy(newDT, newDT_d, NRAD*sizeof(float),cudaMemcpyDeviceToHost));
+  gpuErrchk(cudaMemcpy(DT1D, DT1D_d, NRAD*sizeof(float), cudaMemcpyDeviceToHost));
+  
+  float newdt = newDT[1];
 
-  gpuErrchk(cudaMemcpy(CFL, CFL_d,  sizeof(int), cudaMemcpyDeviceToHost));
+  for (int i=2; i<NRAD; i++){
+    if (newDT[i] < newdt)
+      newdt = newDT[i];
+  }
 
-  return CFL[0];
+  for (int i=0; i<NRAD-1; i++){
+    if (DT1D[i] < newdt)
+      newdt = DT1D[i];
+  }
+
+  if (DeltaT < newdt) newdt = DeltaT;
+  
+  //ConditionCFLKernel2D3<<<dimGrid4, dimBlock>>>(newDT_d, DT2D_d, DT1D_d, Vmoy_d, invRmed_d, CFL_d, NSEC, NRAD, DeltaT);
+  // gpuErrchk(cudaDeviceSynchronize());
+
+  //gpuErrchk(cudaMemcpy(CFL, CFL_d,  sizeof(int), cudaMemcpyDeviceToHost));
+
+  return (int)(ceil(DeltaT/newdt));
 }
 
 
