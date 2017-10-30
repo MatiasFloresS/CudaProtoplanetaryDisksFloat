@@ -26,11 +26,11 @@ Transport       	FARGO			# FARGO handling of CFL timestep (otherwise set to STAN
 ##################
 ### Grid parameters
 ##################			
-Nrad            	2048			# Number of grid cells along radial direction
-Nsec            	2048			# Number of grid cells along azimuthal direction
+Nrad            	400			# Number of grid cells along radial direction
+Nsec            	900			# Number of grid cells along azimuthal direction
 Rmin            	1.0			# Grid's inner edge
 Rmax            	80.0			# Grid's outer edge
-InnerBoundary   	EVANESCENT		# Boundary condition at inner and outer edges
+InnerBoundary   	NONREFLECTING		# Boundary condition at inner and outer edges
 RadialSpacing   	ARITHMETHIC     			# Type L for logarithmic radial spacing of the cells
 Disk            	YES			# do we include the disc?
 OmegaFrame      	0.0			# Frame's angular frequency
@@ -40,7 +40,7 @@ IndirectTerm    	YES			# do we include the indirect acceleration?
 ##################			
 ### Outputs control parameters
 ##################
-Ntot		 	1			# NtotxDT/2Pi sets the total number of orbits (at R=1)
+Ntot		 	500			# NtotxDT/2Pi sets the total number of orbits (at R=1)
 Ninterm          	1			# Ninterm*DT/2pi sets the time in orbits between outputs
 DT		 	15.89534122527376	
 OutputDir        	hd/			# Name of outputs directory (local)

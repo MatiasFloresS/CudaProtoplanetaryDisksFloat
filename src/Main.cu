@@ -196,7 +196,6 @@ __host__ int main (int argc, char *argv[])
 
   /* Si elige la opcion SelfGravity, se crean los planes 2D de la cufft */
 
-  printf("self%d\n",SelfGravity );
   if (SelfGravity){
     if ((cufftPlan2d(&planf, 2*NRAD, NSEC, CUFFT_C2C)) != CUFFT_SUCCESS){
       printf("cufft plan error\n");
@@ -372,10 +371,9 @@ __host__ int main (int argc, char *argv[])
 
     if (NINTERM * (TimeStep = (i / NINTERM)) == i){
       /* Outputs are done here */
-      //printf("%d\n", i);
       TimeToWrite = YES;
-      //DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
-      //SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
+      DeviceToHostcudaMemcpy(Dens, Energy, Label, Temperature, Vrad, Vtheta); // Traigo los valores desde la GPU
+      SendOutput (TimeStep, Dens, Vrad, Vtheta, Energy, Label);
       //WritePlanetSystemFile (sys, TimeStep);
     }
     else TimeToWrite = NO;

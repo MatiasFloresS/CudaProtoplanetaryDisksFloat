@@ -85,6 +85,8 @@ __host__ void ReduceCs ()
   cs1_r    = DeviceReduce(cs1_d, NSEC) / NSEC;
   csnrm1_r = DeviceReduce(csnrm1_d, NSEC) / NSEC;
   csnrm2_r = DeviceReduce(csnrm2_d, NSEC) / NSEC;
+  gpuErrchk(cudaDeviceSynchronize());
+//  printf("%f %f %f %f \n", cs0_r, cs1_r, csnrm1_r, csnrm2_r);
 }
 
 
@@ -97,6 +99,7 @@ __host__ void ReduceMean (float *Dens, float *Energy)
   mean_dens_r2   = DeviceReduce(mean_dens_d2, NSEC)   / NSEC;
   mean_energy_r  = DeviceReduce(mean_energy_d, NSEC)  / NSEC;
   mean_energy_r2 = DeviceReduce(mean_energy_d2, NSEC) / NSEC;
+  gpuErrchk(cudaDeviceSynchronize());
 }
 
 
