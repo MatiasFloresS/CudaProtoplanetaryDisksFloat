@@ -58,9 +58,8 @@ __host__ float DeviceReduce (float *in, int N) ;
 __global__ void MultiplyPolarGridbyConstantKernel (float *Dens, int nrad, int nsec, float ScalingFactor);
 
 __global__ void ComputeForceKernel (float *CellAbscissa, float *CellOrdinate, float *Surf, float *Dens, float x,
-  float y, float rsmoothing, int nsec, int nrad, float a, float *Rmed, float rh, float *fxi,
-  float *fxo, float *fyi, float *fyo, int k, float hill_cut);
-
+  float y, float rsmoothing, int nsec, int nrad, float *Rmed, float rh, float *fxi, float *fxo, float *fyi, float *fyo,
+  int k, int dimfxy);
 __global__ void OpenBoundaryKernel (float *Vrad, float *Dens, float *Energy, int nsec, float SigmaMed);
 
 __global__ void ReduceCsKernel (float *SoundSpeed, float *cs0, float *cs1, float *csnrm1, float *csnrm2, int nsec, int nrad);
@@ -86,7 +85,7 @@ __global__ void InitGasVelocitiesKernel (int nsec, int nrad, int SelfGravity, fl
 __host__ void Make1Dprofile (int option);
 
 __global__ void ViscousTermsKernelDRP (float *Vradial, float *Vazimutal , float *DRR, float *DPP, float *DivergenceVelocity,
-  float *DRP, float *invdiffRsup, float *invRmed, float *Rsup, float *Rinf, float *invdiffRmed, int nrad, int nsec, 
+  float *DRP, float *invdiffRsup, float *invRmed, float *Rsup, float *Rinf, float *invdiffRmed, int nrad, int nsec,
   float *invRinf, float invdphi);
 
 __global__ void ViscousTermsKernelTAURP (float *dens, float *viscosity_array_d, float *DRR, float *DPP, float onethird,

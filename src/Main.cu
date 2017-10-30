@@ -2,34 +2,24 @@
 #include "Param.cuh"
 
 /* extern float device arrays */
-extern float *SigmaInf_d, *CellAbscissa_d, *CellOrdinate_d;
-extern float *Pressure_d, *SoundSpeed_d;
-extern float *viscosity_array_d, *QStar_d, *ExtLabel_d, *dq_d, *DRP_d, *vt_cent_d;
-extern float *QRStar_d;
-extern float *DivergenceVelocity_d, *DRR_d, *DPP_d, *TAURR_d, *TAURP_d, *TAUPP_d;
-extern float *DensStar_d, *LostByDisk_d, *VMed_d;
-extern float *Vmoy_d, *newDT_d, *DT1D_d, *DT2D_d;
+extern float *Pressure_d, *SoundSpeed_d, *Vrad_d, *Energy_d, *Vtheta_d, *VthetaRes_d, *VradInt_d, *Vresidual_d;
+extern float *Vazimutal_d, *Vradial_d, *Temperature_d, *Work_d, *RadMomP_d, *RadMomM_d, *ThetaMomP_d, *ThetaMomM_d;
+extern float *TempShift_d, *SigmaInf_d, *CellAbscissa_d, *CellOrdinate_d, *QRStar_d, *DensStar_d, *LostByDisk_d, *VMed_d;
+extern float *viscosity_array_d, *QStar_d, *ExtLabel_d, *dq_d, *DRP_d, *vt_cent_d, *DT1D_d, *DT2D_d, *TemperInt_d;
+extern float *DivergenceVelocity_d, *DRR_d, *DPP_d, *TAURR_d, *TAURP_d, *TAUPP_d, *Vmoy_d, *newDT_d;
+extern float *supp_torque_d, *invdxtheta_d, *dxtheta_d;
 
-extern float *RadMomP_d, *RadMomM_d, *ThetaMomP_d, *ThetaMomM_d, *TempShift_d;
-extern float *Vrad_d, *Energy_d, *Vtheta_d, *VthetaRes_d, *VradInt_d, *Vresidual_d, *Vazimutal_d, *Vradial_d;
-extern float *VradInt, *VthetaInt, *VradNew, *VthetaNew, *VthetaRes, *EnergyInt, *EnergyNew, *DensInt, *TemperInt_d;
-extern float *Temperature, *TemperInt, *Temperature_d, *RadMomP, *RadMomM, *ThetaMomP, *ThetaMomM, *Work_d, *Work;
-extern float *TempShift, *Pressure, *SoundSpeed;
+/* extern float host array */
+extern float *VradInt, *VthetaInt, *VradNew, *VthetaNew, *VthetaRes, *EnergyInt, *EnergyNew, *DensInt;
+extern float *Temperature, *TemperInt, *RadMomP, *RadMomM, *ThetaMomP, *ThetaMomM, *Work, *SoundSpeed;
+extern float *TempShift, *Pressure, *CellAbscissa, *CellOrdinate, *vt_cent, *Kr_aux, *Kt_aux, *DivergenceVelocity;
+extern float *QRStar, *ExtLabel, *dq, *supp_torque, *dxtheta, *invdxtheta;
+extern float *DRP, *DRR, *DPP, *TAURR, *TAURP, *TAUPP, *Radii, *Surf, *invSurf, *powRmed, *DensStar, *Potential;
 
 /* extern float values */
 extern float OMEGAFRAME;
 extern float PhysicalTimeInitial, PhysicalTime;
 extern float THICKNESSSMOOTHING;
-
-/* extern float host arrays */
-extern float *CellAbscissa, *CellOrdinate, *vt_cent;
-extern float *Kr_aux, *Kt_aux;
-extern float *QRStar, *ExtLabel, *dq, *DivergenceVelocity;
-extern float *DRP, *DRR, *DPP, *TAURR, *TAURP, *TAUPP, *Radii;
-extern float *Surf, *invSurf, *powRmed;
-extern float *DensStar;
-extern float *Potential;
-extern float *supp_torque, *dxtheta, *invdxtheta, *supp_torque_d, *invdxtheta_d, *dxtheta_d;
 
 float invdphi, onethird, dphi;
 float *example;
@@ -40,6 +30,7 @@ float *fieldsrc, *vt_int, *GLOBAL_bufarray, *CoolingTimeMed, *QplusMed , *viscos
 float *cs1, *Qplus, *QStar, *Qbase, *cs0, *csnrm1, *csnrm2, *mean_dens, *mean_dens2;
 float *mean_energy, *mean_energy2, *array, *mdcp0;
 float *SG_Accr, *SG_Acct, *GLOBAL_AxiSGAccr;
+
 
 float *cosj, *sinj, dxphi;
 float *cosj_d, *sinj_d;
@@ -96,13 +87,9 @@ cufftComplex *SGP_Kt_dc, *SGP_Kr_dc, *SGP_St_dc, *SGP_Sr_dc, *Gr_dc, *Gphi_dc, *
 __host__ int main (int argc, char *argv[])
 {
   int device;
-  //printf("enter gpu device: ");
-  //scanf("%d", &device);
+  /* GPU used */
   device = 0;
-
-
-  //cudaSetDevice(1); Using gpu nvidia m4000 8 gb
-  cudaSetDevice(device); // Using gpu nvidia m4000 8gb
+  cudaSetDevice(device);
 
   float     *Dens;
   float     *Vrad;
@@ -228,7 +215,6 @@ __host__ int main (int argc, char *argv[])
   dimGrid2 = dimG2;
   dimBlock2 = dimB2;
 
-
   dim3 dimG3 (nsec2pot/blocksize2D, nrad2potSG/blocksize2D);
   dimGrid3 = dimG3;
 
@@ -261,7 +247,7 @@ __host__ int main (int argc, char *argv[])
 
   gpuErrchk(cudaMalloc((void**)&cosj_d, NSEC*sizeof(float)));
   gpuErrchk(cudaMalloc((void**)&sinj_d, NSEC*sizeof(float)));
-  
+
 
   /* global arrays */
   CreateArrays();
@@ -283,12 +269,12 @@ __host__ int main (int argc, char *argv[])
     gpuErrchk(cudaMemcpy(supp_torque_d, supp_torque, NRAD*sizeof(float), cudaMemcpyHostToDevice));
     gpuErrchk(cudaMemcpy(invdxtheta_d, invdxtheta,  NRAD*sizeof(float), cudaMemcpyHostToDevice));
     gpuErrchk(cudaMemcpy(dxtheta_d, dxtheta,  NRAD*sizeof(float), cudaMemcpyHostToDevice));
- 
+
 
   for (int j = 0; j < NSEC; j++){
      dxphi = 2.0*PI*(float)j/(float)NSEC;
      cosj[j] = cos(dxphi);
-     sinj[j] = sin(dxphi);  
+     sinj[j] = sin(dxphi);
   }
   gpuErrchk(cudaMemcpy(cosj_d, cosj, NSEC*sizeof(float), cudaMemcpyHostToDevice));
   gpuErrchk(cudaMemcpy(sinj_d, sinj, NSEC*sizeof(float), cudaMemcpyHostToDevice));
@@ -318,7 +304,6 @@ __host__ int main (int argc, char *argv[])
       printf("A logarithmic grid is needed to compute self-gravity with polar method. Try again\n" );
       exit(-1);
     }
-
 
     SGP_eps = THICKNESSSMOOTHING * ASPECTRATIO;
     SGP_rstep = logf(Radii[NRAD]/Radii[0])/(float)NRAD;
@@ -691,8 +676,8 @@ __host__ void CreateArrays () // ordenar
   mean_dens2      = (float *)malloc(NSEC*sizeof(float));
   mean_energy     = (float *)malloc(NSEC*sizeof(float));
   mean_energy2    = (float *)malloc(NSEC*sizeof(float));
-  
-  HtoD 		  = (float *)malloc(NSEC*sizeof(float)); 
+
+  HtoD 		  = (float *)malloc(NSEC*sizeof(float));
 
 
   if (SelfGravity){
