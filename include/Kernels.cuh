@@ -59,7 +59,7 @@ __global__ void MultiplyPolarGridbyConstantKernel (float *Dens, int nrad, int ns
 
 __global__ void ComputeForceKernel (float *CellAbscissa, float *CellOrdinate, float *Surf, float *Dens, float x,
   float y, float rsmoothing, int nsec, int nrad, float *Rmed, float rh, float *fxi, float *fxo, float *fyi, float *fyo,
-  int k, int dimfxy);
+  int k, int dimfxy, float a);
 __global__ void OpenBoundaryKernel (float *Vrad, float *Dens, float *Energy, int nsec, float SigmaMed);
 
 __global__ void ReduceCsKernel (float *SoundSpeed, float *cs0, float *cs1, float *csnrm1, float *csnrm2, int nsec, int nrad);

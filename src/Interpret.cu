@@ -19,8 +19,7 @@ extern string LABELADVECTION, TRANSPORT, PLANETCONFIG, SELFGRAVITY;
 extern string CICPLANET, FORCEDCIRCULAR, ADIABATIC, COOLING;
 extern string EXCLUDEHILL, RADIALSPACING;
 
-int ExcludeHill, ViscosityAlpha, RocheSmoothing, OpenInner, AdvecteLabel;
-int LogGrid;
+int ExcludeHill, ViscosityAlpha, RocheSmoothing, OpenInner, AdvecteLabel, LogGrid;
 
 int       FastTransport = YES,  GuidingCenter = NO, Indirect_Term = YES;
 int       IsDisk = YES, NonReflecting = NO, Corotating = NO,  OuterSourceMass = NO, Evanescent = NO;
@@ -29,7 +28,6 @@ int       Write_Temperature = NO, Write_DivV = NO, Write_Qplus = NO;
 int       SelfGravity = NO, SGZeroMode = NO, ZMPluss = NO;
 int       Adiabatic = NO, Cooling = NO;
 int       CICPlanet = NO, ForcedCircular = NO;
-
 
 /* Busco la palabra en el archivo, si existe tomo el valor y lo paso a float
    Caso contrario toma el valor por defecto del programa */
@@ -94,8 +92,6 @@ __host__ void SearchVariable(char *name, char *stringval)
   if (strcmp(name, "COOLING") == 0) COOLING = stringval;
   if (strcmp(name, "COOLINGTIME0") == 0) COOLINGTIME0 = (float) (temp);
 }
-
-
 
 __host__ void ReadVariables(char *filename)
 {
@@ -211,8 +207,6 @@ __host__ void ReadVariables(char *filename)
     */
 }
 
-
-
 __host__ void PrintUsage (char *execname)
 {
   printf("Usage : %s [-abcdeimnptvz] [-(0-9)] [-s number] [-f scaling] parameters file\n", execname);
@@ -238,21 +232,15 @@ __host__ void PrintUsage (char *execname)
   exit(1);
 }
 
-
-
 __host__ float TellNbOrbits (float time)
 {
   return time/2.0/PI*sqrtf(G*1.0/1.0/1.0/1.0);
 }
 
-
-
 __host__ float TellNbOutputs (float time)
 {
   return (time/DT/NINTERM);
 }
-
-
 
 __host__ void TellEverything()
 {

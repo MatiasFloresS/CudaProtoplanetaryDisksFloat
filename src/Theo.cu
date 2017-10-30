@@ -8,7 +8,6 @@ extern float *Rinf, *Rmed, ScalingFactor;
 extern float CAVITYRATIO, CAVITYRADIUS, SIGMASLOPE, SIGMA0, ADIABATICINDEX;
 extern float ASPECTRATIO, FLARINGINDEX, COOLINGTIME0;
 
-
 /* Surface density */
 __host__ float Sigma(float r)
 {
@@ -20,8 +19,6 @@ __host__ float Sigma(float r)
   return cavity*ScalingFactor*SIGMA0*pow(r,-SIGMASLOPE);
 }
 
-
-
 __host__ void FillSigma ()
 {
   int i;
@@ -30,8 +27,6 @@ __host__ void FillSigma ()
     SigmaInf[i] = Sigma(Rinf[i]);
   }
 }
-
-
 
 /* Thermal energy */
 __host__ float Energy(float r)
@@ -44,11 +39,8 @@ __host__ float Energy(float r)
   }
   else
     energy0 = R/MU/(ADIABATICINDEX-1.0)*SIGMA0*pow(ASPECTRATIO,2.0)*pow(r,-SIGMASLOPE-1.0+2.0*FLARINGINDEX);
-
   return energy0;
 }
-
-
 
 __host__ void FillEnergy ()
 {
@@ -56,8 +48,6 @@ __host__ void FillEnergy ()
   for (i = 0; i < NRAD; i++)
     EnergyMed[i] = Energy(Rmed[i]);
 }
-
-
 
 __host__ float CoolingTime(float r)
 {
@@ -68,12 +58,8 @@ __host__ float CoolingTime(float r)
 
 __host__ void FillCoolingTime()
 {
-  for (int i = 0; i < NRAD; i++) CoolingTimeMed[i] = CoolingTime(Rmed[i]);
-}
-
-__host__ void FillQplus()
-{
-  for (int i = 0; i < NRAD; i++) QplusMed[i] = Qplusinit(Rmed[i]);
+  for (int i = 0; i < NRAD; i++)
+    CoolingTimeMed[i] = CoolingTime(Rmed[i]);
 }
 
 __host__ float Qplusinit(float r)
@@ -82,4 +68,10 @@ __host__ float Qplusinit(float r)
   viscosity = FViscosity(r);
   qp0 = 2.25*viscosity*SIGMA0*pow(r,-SIGMASLOPE-3.0);
   return qp0;
+}
+
+__host__ void FillQplus()
+{
+  for (int i = 0; i < NRAD; i++)
+    QplusMed[i] = Qplusinit(Rmed[i]);
 }

@@ -40,8 +40,6 @@ __host__ void ApplyBoundaryCondition (float *Dens, float *Energy, float *Vrad, f
   if (OuterSourceMass == YES) printf("hola\n" );
 }
 
-
-
 __host__ void NonReflectingBoundary (float *Dens, float *Energy, float *Vrad)
 {
   int i,i_angle, i_angle2;
@@ -212,9 +210,9 @@ __host__ void ApplySubKeplerianBoundary(float *VthetaInt)
   }
     for (int j=0; j<NSEC; j++)
 	HtoD[j] =  VKepIn - Rmed[0]*OmegaFrame;
- 
-    gpuErrchk(cudaMemcpy(VthetaInt_d, HtoD  ,  NSEC*sizeof(float), cudaMemcpyHostToDevice));	
-	
+
+    gpuErrchk(cudaMemcpy(VthetaInt_d, HtoD  ,  NSEC*sizeof(float), cudaMemcpyHostToDevice));
+
     for (int j=0; j<NSEC; j++)
 	HtoD[j] = VKepOut - Rmed[NRAD-1]*OmegaFrame;
 

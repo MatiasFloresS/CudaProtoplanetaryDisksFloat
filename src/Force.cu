@@ -5,7 +5,7 @@ extern string OUTPUTDIR;
 extern float ROCHESMOOTHING, THICKNESSSMOOTHING, FLARINGINDEX;
 extern float *CellAbscissa, *CellOrdinate, *forcesxi, *forcesyi, *forcesxo, *forcesyo;
 extern float *CellAbscissa_d, *CellOrdinate_d, *fxi_d, *fxo_d, *fyi_d, *fyo_d, *Rmed_d, *Surf_d, *Dens_d;
-extern float *Rmed, *Surf, *example;
+extern float *Rmed, *Surf;
 
 extern int RocheSmoothing, size_grid, NRAD, NSEC, SelfGravity;
 extern dim3 dimGrid2, dimBlock2;
@@ -38,7 +38,7 @@ __host__ void ComputeForce (Force *force, float *Dens, float x, float y, float r
   globalforce = force->GlobalForce;
 
   a = sqrt(x*x+y*y);
-  rh = pow(m/3., 1./3.)*a+1e-15;
+  rh = pow(mass/3., 1./3.)*a+1e-15;
 
   for (k = 0; k < dimfxy; k++) {
     gpuErrchk(cudaMemset(fxi_d, 0, NRAD*NSEC*sizeof(float)));
@@ -47,7 +47,7 @@ __host__ void ComputeForce (Force *force, float *Dens, float x, float y, float r
     gpuErrchk(cudaMemset(fyo_d, 0, NRAD*NSEC*sizeof(float)));
 
     ComputeForceKernel<<<dimGrid2, dimBlock2>>>(CellAbscissa_d, CellOrdinate_d, Surf_d, Dens_d, x, y, rsmoothing,
-      NSEC, NRAD, Rmed_d, rh, fxi_d, fxo_d, fyi_d, fyo_d, k, dimfxy);
+      NSEC, NRAD, Rmed_d, rh, fxi_d, fxo_d, fyi_d, fyo_d, k, dimfxy, a);
     gpuErrchk(cudaDeviceSynchronize());
 
     globalforce[k]            = DeviceReduce(fxi_d, NRAD*NSEC);
@@ -67,10 +67,17 @@ __host__ void ComputeForce (Force *force, float *Dens, float x, float y, float r
   force->GlobalForce = globalforce;
 }
 
+__host__ float Compute_smoothing(float r)
+{
+  float smooth;
+  smooth = THICKNESSSMOOTHING * AspectRatioHost(r) * pow(r, 1.0+FLARINGINDEX);
+  return smooth;
+}
+
 __host__ void UpdateLog (Force *force, PlanetarySystem *sys, float *Dens, float *Energy, int TimeStep,
   float PhysicalTime, int dimfxy)
 {
-  int i, nb, k
+  int i, nb, k;
   float x, y, r, m, vx, vy, smoothing;
   float *globalforce;
   FILE *out;
@@ -129,16 +136,4 @@ __host__ void UpdateLog (Force *force, PlanetarySystem *sys, float *Dens, float 
       }
     }
   }
-}
-
-
-
-
-
-
-__host__ float Compute_smoothing(float r)
-{
-  float smooth;
-  smooth = THICKNESSSMOOTHING * AspectRatioHost(r) * pow(r, 1.0+FLARINGINDEX);
-  return smooth;
 }

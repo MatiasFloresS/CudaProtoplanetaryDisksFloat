@@ -211,17 +211,16 @@ __global__ void InitLabelKernel (float *Label, float xp, float yp, float rhill, 
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
 
-  float distance, x, y, distx, disty;
+  float distance, x, y, angle;
   if (i<nrad && j<nsec){
-    x = Rmed[i] * cosf((float)j / (float)nsec*2.0*PI);
-    y = Rmed[i] * sinf((float)j / (float)nsec*2.0*PI);
-    distx = (x-xp)*(x-xp);
-    disty = (y-yp)*(y-yp);
-    distance = sqrtf(distx + disty);
-
-    if (distance < rhill) Label[i*nsec + j] = 1.0;
-    else Label[i*nsec + j] = 0.0;
-
+    angle = (float)j/float(nsec)*2.0*PI;
+    x = Rmed[i] * cosf(angle);
+    y = Rmed[i] * sinf(angle);
+    distance = sqrtf((x-xp)*(x-xp) + (y-yp)*(y-yp));
+    if (distance < rhill)
+      Label[i*nsec + j] = 1.0;
+    else
+      Label[i*nsec + j] = 0.0;
   }
 }
 
@@ -628,50 +627,50 @@ __global__ void InitGasVelocitiesKernel (int nsec, int nrad, int SelfGravity, fl
   float ASPECTRATIO, float FLARINGINDEX, float SIGMASLOPE, float *Vrad, float *Vtheta,
   float IMPOSEDDISKDRIFT, float SIGMA0, float *SigmaInf, float OmegaFrame, float *Rinf, int ViscosityAlpha, float *viscosity_array)
 {
-    int j = threadIdx.x + blockDim.x*blockIdx.x;
-    int i = threadIdx.y + blockDim.y*blockIdx.y;
-    float viscosity;
+  int j = threadIdx.x + blockDim.x*blockIdx.x;
+  int i = threadIdx.y + blockDim.y*blockIdx.y;
 
-    if (i <= nrad && j < nsec){
-      float omega, r, ri;
-      if (i == nrad){
-        r = Rmed[nrad - 1];
-        ri = Rinf[nrad - 1];
-      }
-      else{
-        r = Rmed[i];
-        ri = Rinf[i];
-      }
-
-      if (!SelfGravity){
-        omega = sqrt(G*1.0/r/r/r);
-        Vtheta[i*nsec + j] = omega*r*sqrt(1.0-powf(ASPECTRATIO,2.0)*powf(r,2.0*FLARINGINDEX)* \
-        (1.+SIGMASLOPE-2.0*FLARINGINDEX));
-      }
-      Vtheta[i*nsec + j ] -= OmegaFrame*r;
-
-
-      //if (CentrifugalBalance) Vtheta[i*nsec + j] = vt_cent[i];
-
-      if (i == nrad) Vrad[i*nsec + j] = 0.0;
-      else {
-        Vrad[i*nsec + j] = IMPOSEDDISKDRIFT*SIGMA0/SigmaInf[i]/ri;
-
-        if (ViscosityAlpha) Vrad[i*nsec+j] -= 3.0*viscosity_array[i]/r*(-SIGMASLOPE+2.0*FLARINGINDEX+1.0);
-        else Vrad[i*nsec+j] -= 3.0*viscosity_array[i]/r*(-SIGMASLOPE+.5);
-
-      }
-
-      if (i == 0 && j < nsec) Vrad[j] = Vrad[nrad*nsec + j] = 0.0;
-
+  if (i <= nrad && j < nsec){
+    float omega, r, ri;
+    if (i == nrad){
+      r = Rmed[nrad - 1];
+      ri = Rinf[nrad - 1];
     }
+    else{
+      r = Rmed[i];
+      ri = Rinf[i];
+    }
+
+    if (!SelfGravity){
+      omega = sqrtf(G*1.0/r/r/r);
+      Vtheta[i*nsec + j] = omega*r*sqrtf(1.0-powf(ASPECTRATIO,2.0)*powf(r,2.0*FLARINGINDEX)* \
+      (1.+SIGMASLOPE-2.0*FLARINGINDEX));
+    }
+    Vtheta[i*nsec + j ] -= OmegaFrame*r;
+//  if (CentrifugalBalance)
+//    Vtheta[i*nsec + j] = vt_cent[i];
+
+    if (i == nrad)
+      Vrad[i*nsec + j] = 0.0;
+    else {
+      Vrad[i*nsec + j] = IMPOSEDDISKDRIFT*SIGMA0/SigmaInf[i]/ri;
+
+      if (ViscosityAlpha)
+        Vrad[i*nsec+j] -= 3.0*viscosity_array[i]/r*(-SIGMASLOPE+2.0*FLARINGINDEX+1.0);
+      else
+        Vrad[i*nsec+j] -= 3.0*viscosity_array[i]/r*(-SIGMASLOPE+.5);
+    }
+
+    if (i == 0 && j < nsec)
+      Vrad[j] = Vrad[nrad*nsec + j] = 0.0;
   }
+}
 
 
 /* Listo */
 __global__ void ComputeForceKernel (float *CellAbscissa, float *CellOrdinate, float *Surf, float *Dens, float x,
   float y, float rsmoothing, int nsec, int nrad, float *Rmed, float rh, float *fxi, float *fxo, float *fyi, float *fyo,
-  int k, int dimfxy)
+  int k, int dimfxy, float a)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;
@@ -712,28 +711,20 @@ __global__ void ViscousTermsKernelDRP (float *Vradial, float *Vazimutal , float 
   float *DRP, float *invdiffRsup, float *invRmed, float *Rsup, float *Rinf, float *invdiffRmed, int nrad, int nsec,
   float *invRinf, float invdphi)
 {
-   int j = threadIdx.x + blockDim.x*blockIdx.x;
-   int i = threadIdx.y + blockDim.y*blockIdx.y;
+  int j = threadIdx.x + blockDim.x*blockIdx.x;
+  int i = threadIdx.y + blockDim.y*blockIdx.y;
 
-   float gradvrad, gradvtheta;
+  if (i<nrad && j<nsec){ /* Drr, Dpp and divV computation */
+   DRR[i*nsec + j] = (Vradial[(i+1)*nsec + j] - Vradial[i*nsec + j])*invdiffRsup[i];
+   DPP[i*nsec + j] = (Vazimutal[i*nsec + (j+1)%nsec] - Vazimutal[i*nsec + j])*invdphi*InvRmed[i] + \
+   0.5*(Vradial[(i+1)*nsec + j] + Vradial[i*nsec + j])*InvRmed[i];
 
-   if (i<nrad && j<nsec){ /* Drr, Dpp and divV computation */
-     gradvrad = Vradial[(i+1)*nsec + j] + Vradial[i*nsec + j];
-     gradvtheta = (Vazimutal[i*nsec + (j+1)%nsec] - Vazimutal[i*nsec + j])*invdphi*invRmed[i];
+  DivergenceVelocity[i*nsec + j] = (Vradial[(i+1)*nsec + j]*Rsup[i] - Vradial[i*nsec + j]*Rinf[i])*invdiffRsup[i]*invRmed[i];
+  DivergenceVelocity[i*nsec + j] += (Vazimutal[i*nsec + (j+1)%nsec] - Vazimutal[i*nsec + j])*invdphi*invRmed[i];
 
-     DRR[i*nsec + j] = (Vradial[(i+1)*nsec + j] - Vradial[i*nsec + j])*invdiffRsup[i];
-     DPP[i*nsec + j] = gradvtheta + 0.5*gradvrad*invRmed[i];
-
-     gradvrad = Vradial[(i+1)*nsec + j]*Rsup[i] - Vradial[i*nsec+j]*Rinf[i];
-     DivergenceVelocity[i*nsec + j] = gradvrad*invdiffRsup[i] * invRmed[i];
-     DivergenceVelocity[i*nsec + j] += gradvtheta;
-
-     if (i > 0) {
-        gradvtheta = Vazimutal[i*nsec + j]*invRmed[i] - Vazimutal[(i-1)*nsec + j]*invRmed[i-1];
-        gradvrad = Vradial[i*nsec + j] - Vradial[i*nsec + ((j-1)+nsec)%nsec];
-        DRP[i*nsec + j] = 0.5*(Rinf[i]*gradvtheta* invdiffRmed[i] + gradvrad*invdphi*invRinf[i]);
-     }
-   }
+  if (i > 0)
+    DRP[i*nsec + j] = 0.5*(Rinf[i]*(Vazimutal[i*nsec + j]*invRmed[i] - Vazimutal[(i-1)*nsec + j]*invRmed[i-1])* invdiffRmed[i] + \
+    (Vradial[i*nsec + j] - Vradial[i*nsec + ((j-1)+nsec)%nsec])*invdphi*invRinf[i]);
  }
 
 /* Listo */
@@ -743,21 +734,12 @@ __global__ void ViscousTermsKernelTAURP (float *dens, float *viscosity_array_d, 
    int j = threadIdx.x + blockDim.x*blockIdx.x;
    int i = threadIdx.y + blockDim.y*blockIdx.y;
 
-   float graddens, densvisc, divv;
-
    if (i<nrad && j<nsec){ /* TAUrr and TAUpp computation */
+     TAURR[i*nsec + j] = 2.0*dens[i*nsec + j]*viscosity_array_d[i]*(DRR[i*nsec + j] - onethird*DivergenceVelocity[i*nsec+j]);
+     TAUPP[i*nsec + j] = 2.0*dens[i*nsec + j]*viscosity_array_d[i]*(DPP[i*nsec + j] - onethird*DivergenceVelocity[i*nsec+j]);
 
-     densvisc = 2.0*dens[i*nsec + j]*viscosity_array_d[i];
-     divv = onethird*DivergenceVelocity[i*nsec+j];
-
-     TAURR[i*nsec + j] = densvisc*(DRR[i*nsec + j] - divv);
-     TAUPP[i*nsec + j] = densvisc*(DPP[i*nsec + j] - divv);
-
-     if (i > 0){
-      graddens = dens[i*nsec + j] + dens[(i-1)*nsec + j] + dens[i*nsec + ((j-1)*nsec)%nsec] + dens[(i-1)*nsec +((j-1)+nsec)%nsec];
-      TAURP[i*nsec + j] = 2.0*0.25*(graddens)* viscosity_array_d[i]*DRP[i*nsec + j];
-
-    }
+     if (i > 0)
+      TAURP[i*nsec + j] = 2.0*0.25*(dens[i*nsec + j] + dens[(i-1)*nsec + j] + dens[i*nsec + ((j-1)*nsec)%nsec] + dens[(i-1)*nsec +((j-1)+nsec)%nsec])* \ viscosity_array_d[i]*DRP[i*nsec + j];
    }
 }
 
@@ -1216,9 +1198,9 @@ __global__ void ComputeSpeQtyKernel (float *Label, float *Dens, float *ExtLabel,
   }
 }
 
-
-__global__ void FillForcesArraysKernel (float *Rmed, int nsec, int nrad, double xplanet, double yplanet, float smooth,
-  double mplanet, int Indirect_Term, float InvPlanetDistance3, float *Potential, Pair IndirectTerm, int k)
+/* Listo */
+__global__ void FillForcesArraysKernel (float *Rmed, int nsec, int nrad, float xplanet, float yplanet, float smooth,
+  float mplanet, int Indirect_Term, float InvPlanetDistance3, float *Potential, Pair IndirectTerm, int k)
 {
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = threadIdx.y + blockDim.y*blockIdx.y;

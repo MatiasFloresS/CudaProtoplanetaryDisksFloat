@@ -4,59 +4,39 @@
 extern int NRAD, NSEC, size_grid, RocheSmoothing;
 extern int ForcedCircular, Indirect_Term, SelfGravity, Cooling, CentrifugalBalance;
 
-extern float *SigmaMed, *EnergyMed;
-extern float *Pressure, *SoundSpeed;
+extern float *SigmaMed, *EnergyMed, *Pressure, *SoundSpeed, *Potential;
 extern float *viscosity_array, *GLOBAL_bufarray, *vt_int, *SG_Accr, *vt_cent;
+extern float *q0, *PlanetMasses, *q1, *Rmed, *Radii;
 
-extern float *Pressure_d, *SoundSpeed_d;
-extern float *viscosity_array_d, *vt_cent_d, *SigmaInf_d, *SG_Accr_d;
-
-extern float *Vrad_d, *Vtheta_d, *Potential, *Potential_d;
+extern float *Pressure_d, *SoundSpeed_d, *viscosity_array_d, *vt_cent_d, *SigmaInf_d, *SG_Accr_d;
+extern float *Vrad_d, *Vtheta_d, *Potential_d, *Rinf_d, *Rmed_d;
 
 extern float ROCHESMOOTHING, ASPECTRATIO, FLARINGINDEX;
 extern float SIGMASLOPE, SIGMA0, IMPOSEDDISKDRIFT,  RELEASEDATE, RELEASERADIUS;
 extern float VISCOSITY, ALPHAVISCOSITY, CAVITYWIDTH, CAVITYRADIUS, CAVITYRATIO;
 extern float LAMBDADOUBLING;
 
-extern float MassTaper, ViscosityAlpha, PhysicalTime, PhysicalTimeInitial;
+extern float MassTaper, ViscosityAlpha, PhysicalTime, PhysicalTimeInitial, OmegaFrame;
 
 extern Pair DiskOnPrimaryAcceleration;
 static Pair IndirectTerm;
 
-extern float *q0, *PlanetMasses, *q1;
-extern float *Rinf_d, *Rmed, *Rmed_d, *Radii;
-extern float  OmegaFrame;
 extern dim3 dimGrid2, dimBlock2;
 
-__host__ void InitGasDensity (float *Dens)
+__host__ void ComputeIndirectTerm ()
 {
-  int i, j;
-  FillSigma ();
-  for (i = 0; i < NRAD; i++){
-    for (j = 0; j < NSEC; j++){
-      Dens[j+i*NSEC] = SigmaMed[i];
-    }
+  IndirectTerm.x = -DiskOnPrimaryAcceleration.x;
+  IndirectTerm.y = -DiskOnPrimaryAcceleration.y;
+  if (!Indirect_Term){
+    IndirectTerm.x = 0.0;
+    IndirectTerm.y = 0.0;
   }
 }
-
-
-
-__host__ void InitGasEnergy (float *Energy)
-{
-  FillEnergy ();
-  for (int i = 0; i < NRAD; i++){
-    for (int j = 0; j < NSEC; j++){
-      Energy[i*NSEC + j] = EnergyMed[i];
-    }
-  }
-}
-
-
 
 __host__ void FillForcesArrays (PlanetarySystem *sys, float *Dens, float *Energy)
 {
   int NbPlanets, k;
-  double xplanet, yplanet, mplanet;
+  float xplanet, yplanet, mplanet;
   float PlanetDistance, InvPlanetDistance3, RRoche, smooth, smoothing;
   NbPlanets = sys->nb;
 
@@ -72,8 +52,10 @@ __host__ void FillForcesArrays (PlanetarySystem *sys, float *Dens, float *Energy
     PlanetDistance = sqrt(xplanet*xplanet+yplanet*yplanet);
     InvPlanetDistance3 = 1.0/PlanetDistance/PlanetDistance/PlanetDistance;
     RRoche = PlanetDistance*pow((1.0/3.0*mplanet),1.0/3.0);
-    if (RocheSmoothing) smoothing = RRoche*ROCHESMOOTHING;
-    else smoothing = Compute_smoothing (PlanetDistance);
+    if (RocheSmoothing)
+      smoothing = RRoche*ROCHESMOOTHING;
+    else
+      smoothing = Compute_smoothing (PlanetDistance);
     smooth = smoothing*smoothing;
 
     FillForcesArraysKernel<<<dimGrid2,dimBlock2>>>(Rmed_d, NSEC, NRAD, xplanet, yplanet, smooth,
@@ -82,23 +64,11 @@ __host__ void FillForcesArrays (PlanetarySystem *sys, float *Dens, float *Energy
   }
 }
 
-
-__host__ void ComputeIndirectTerm ()
-{
-  IndirectTerm.x = -DiskOnPrimaryAcceleration.x;
-  IndirectTerm.y = -DiskOnPrimaryAcceleration.y;
-  if (!Indirect_Term){
-    IndirectTerm.x = 0.0;
-    IndirectTerm.y = 0.0;
-  }
-}
-
-
 __host__ void AdvanceSystemFromDisk (Force *force, float *Dens, float *Energy, PlanetarySystem *sys, float dt)
 {
   int NbPlanets, k;
-  float m, x, y, r, smoothing;
   Pair gamma;
+  float m, x, y, r, smoothing;
   NbPlanets = sys->nb;
 
   for (k = 0; k < NbPlanets; k++){
@@ -107,8 +77,10 @@ __host__ void AdvanceSystemFromDisk (Force *force, float *Dens, float *Energy, P
       x = sys->x[k];
       y = sys->y[k];
       r = sqrt(x*x + y*y);
-      if (RocheSmoothing) smoothing = r*pow(m/3.,1./3.)*ROCHESMOOTHING;
-      else smoothing = Compute_smoothing (r);
+      if (RocheSmoothing)
+        smoothing = r*pow(m/3.,1./3.)*ROCHESMOOTHING;
+      else
+        smoothing = Compute_smoothing (r);
       gamma = ComputeAccel (force, Dens, x, y, smoothing, m);
       sys->vx[k] += dt * gamma.x;
       sys->vy[k] += dt * gamma.y;
@@ -116,17 +88,14 @@ __host__ void AdvanceSystemFromDisk (Force *force, float *Dens, float *Energy, P
       sys->vy[k] += dt * IndirectTerm.y;
     }
   }
-
-
 }
-
 
 __host__ void AdvanceSystemRK5 (PlanetarySystem *sys, float dt)
 {
   int nb, i , k;
   int *feelothers;
   nb = sys->nb;
-  double dtheta, omega, rdot, x, y, r, new_r, vx, vy, theta, denom;
+  float dtheta, omega, rdot, x, y, r, new_r, vx, vy, theta, denom;
 
   if (!ForcedCircular){
     for (k = 0; k < nb; k++){
@@ -186,6 +155,41 @@ __host__ void AdvanceSystemRK5 (PlanetarySystem *sys, float dt)
 
 }
 
+__host__ SolveOrbits (PlanetarySystem *sys)
+{
+  int i,n;
+  float x, y, vx, vy;
+  n = sys->nb;
+  for (i = 0; i < n; i++) {
+    x = sys->x[i];
+    y = sys->y[i];
+    vx = sys->vx[i];
+    vy = sys->vy[i];
+    FindOrbitalElements (x, y, vy, vy, 1.0+sys->mass[i], i);
+  }
+}
+
+__host__ void InitGasDensity (float *Dens)
+{
+  int i, j;
+  FillSigma ();
+  for (i = 0; i < NRAD; i++){
+    for (j = 0; j < NSEC; j++){
+      Dens[j+i*NSEC] = SigmaMed[i];
+    }
+  }
+}
+
+__host__ void InitGasEnergy (float *Energy)
+{
+  FillEnergy ();
+  for (int i = 0; i < NRAD; i++){
+    for (int j = 0; j < NSEC; j++){
+      Energy[i*NSEC + j] = EnergyMed[i];
+    }
+  }
+}
+
 __host__ void InitGasVelocities (float *Vrad, float *Vtheta)
 {
   float r1, t1, r2, t2, r, ri;
@@ -218,7 +222,7 @@ __host__ void InitGasVelocities (float *Vrad, float *Vtheta)
     }
 
     for (i = 1; i < NRAD; i++)
-      vt_int[i] = sqrtf(vt_int[i]*Radii[i]) - Radii[i]*OmegaFrame;
+      vt_int[i] = sqrt(vt_int[i]*Radii[i]) - Radii[i]*OmegaFrame;
 
     t1 = vt_cent[0] = vt_int[1]+.75*(vt_int[1]-vt_int[2]);
     r1 = ConstructSequence (vt_cent, vt_int, NRAD);
@@ -243,12 +247,9 @@ __host__ void InitGasVelocities (float *Vrad, float *Vtheta)
   if (Cooling){
     FillCoolingTime();
     /* To fill qplus, one requires to calculate viscosity, hence cs if one uses
-    alpha-viscosity */
+      alpha-viscosity */
     FillQplus();
   }
-
-
-
   InitVelocities(Vrad, Vtheta);
 }
 
