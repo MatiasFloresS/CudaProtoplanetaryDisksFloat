@@ -6,7 +6,7 @@ extern float TRANSITIONWIDTH, TRANSITIONRADIUS, TRANSITIONRATIO, ASPECTRATIO, LA
 extern float VISCOSITY, CAVITYRATIO, CAVITYRADIUS, CAVITYWIDTH, ALPHAVISCOSITY;
 extern float ViscosityAlpha, onethird, invdphi;
 
-exter float *SoundSpeed, *GLOBAL_bufarray, *viscosity_array, *invRmed, *Rmed, *Rsup, *VradInt, *VthetaInt;
+extern float *SoundSpeed, *GLOBAL_bufarray, *viscosity_array, *invRmed, *Rmed, *Rsup, *VradInt, *VthetaInt;
 extern float *SoundSpeed_d, *viscosity_array_d, *invdiffRmed_d, *Rinf_d, *invRinf_d, *invRmed_d, *Rmed_d;
 extern float *invdiffRsup_d, *Rsup_d, *Dens_d, *Vrad_d, *Vtheta_d, *Vradial_d, *Vazimutal_d, *VthetaInt_d, *VradInt_d;
 

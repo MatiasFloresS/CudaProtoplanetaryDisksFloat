@@ -136,7 +136,7 @@ __host__ void OpenBoundary ()
 __host__ Pair ComputeAccel (Force *force, float *Dens, float x, float y, float rsmoothing, float mass)
 {
   Pair acceleration;
-  ComputeForce (force, Dens, x, y, rsmoothing, mass, dimfxy, 0.0, 0.0);
+  ComputeForce (force, Dens, x, y, rsmoothing, mass, dimfxy);
   if (ExcludeHill){
     acceleration.x = force->fx_ex_inner+force->fx_ex_outer;
     acceleration.y = force->fy_ex_inner+force->fy_ex_outer;

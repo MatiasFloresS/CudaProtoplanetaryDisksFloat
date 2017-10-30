@@ -155,7 +155,7 @@ __host__ void AdvanceSystemRK5 (PlanetarySystem *sys, float dt)
 
 }
 
-__host__ SolveOrbits (PlanetarySystem *sys)
+/*__host__ void SolveOrbits (PlanetarySystem *sys)
 {
   int i,n;
   float x, y, vx, vy;
@@ -167,7 +167,7 @@ __host__ SolveOrbits (PlanetarySystem *sys)
     vy = sys->vy[i];
     FindOrbitalElements (x, y, vy, vy, 1.0+sys->mass[i], i);
   }
-}
+}*/
 
 __host__ void InitGasDensity (float *Dens)
 {

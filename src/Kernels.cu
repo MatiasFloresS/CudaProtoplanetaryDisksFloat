@@ -716,8 +716,8 @@ __global__ void ViscousTermsKernelDRP (float *Vradial, float *Vazimutal , float 
 
   if (i<nrad && j<nsec){ /* Drr, Dpp and divV computation */
    DRR[i*nsec + j] = (Vradial[(i+1)*nsec + j] - Vradial[i*nsec + j])*invdiffRsup[i];
-   DPP[i*nsec + j] = (Vazimutal[i*nsec + (j+1)%nsec] - Vazimutal[i*nsec + j])*invdphi*InvRmed[i] + \
-   0.5*(Vradial[(i+1)*nsec + j] + Vradial[i*nsec + j])*InvRmed[i];
+   DPP[i*nsec + j] = (Vazimutal[i*nsec + (j+1)%nsec] - Vazimutal[i*nsec + j])*invdphi*invRmed[i] + \
+   0.5*(Vradial[(i+1)*nsec + j] + Vradial[i*nsec + j])*invRmed[i];
 
   DivergenceVelocity[i*nsec + j] = (Vradial[(i+1)*nsec + j]*Rsup[i] - Vradial[i*nsec + j]*Rinf[i])*invdiffRsup[i]*invRmed[i];
   DivergenceVelocity[i*nsec + j] += (Vazimutal[i*nsec + (j+1)%nsec] - Vazimutal[i*nsec + j])*invdphi*invRmed[i];
@@ -725,7 +725,8 @@ __global__ void ViscousTermsKernelDRP (float *Vradial, float *Vazimutal , float 
   if (i > 0)
     DRP[i*nsec + j] = 0.5*(Rinf[i]*(Vazimutal[i*nsec + j]*invRmed[i] - Vazimutal[(i-1)*nsec + j]*invRmed[i-1])* invdiffRmed[i] + \
     (Vradial[i*nsec + j] - Vradial[i*nsec + ((j-1)+nsec)%nsec])*invdphi*invRinf[i]);
- }
+  }
+}
 
 /* Listo */
 __global__ void ViscousTermsKernelTAURP (float *dens, float *viscosity_array_d, float *DRR, float *DPP, float onethird,
@@ -738,9 +739,10 @@ __global__ void ViscousTermsKernelTAURP (float *dens, float *viscosity_array_d, 
      TAURR[i*nsec + j] = 2.0*dens[i*nsec + j]*viscosity_array_d[i]*(DRR[i*nsec + j] - onethird*DivergenceVelocity[i*nsec+j]);
      TAUPP[i*nsec + j] = 2.0*dens[i*nsec + j]*viscosity_array_d[i]*(DPP[i*nsec + j] - onethird*DivergenceVelocity[i*nsec+j]);
 
-     if (i > 0)
-      TAURP[i*nsec + j] = 2.0*0.25*(dens[i*nsec + j] + dens[(i-1)*nsec + j] + dens[i*nsec + ((j-1)*nsec)%nsec] + dens[(i-1)*nsec +((j-1)+nsec)%nsec])* \ viscosity_array_d[i]*DRP[i*nsec + j];
-   }
+     if (i > 0){
+      TAURP[i*nsec + j] = 2.0*0.25*(dens[i*nsec + j] + dens[(i-1)*nsec + j] + dens[i*nsec + ((j-1)*nsec)%nsec] + dens[(i-1)*nsec +((j-1)+nsec)%nsec])*viscosity_array_d[i]*DRP[i*nsec + j];
+    }
+  }
 }
 
 /* Listo */
