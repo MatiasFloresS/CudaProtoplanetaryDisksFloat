@@ -30,7 +30,7 @@ __global__ void UpdateVelocitiesKernel (float *VthetaInt, float *VradInt, float 
   float *Rinf, float *invdiffRmed, float *invdiffRsup, float *Dens, float *invRinf, float *TAURR,
   float *TAURP, float *TAUPP, float DeltaT, int nrad, int nsec, float invdphi);
 
-__global__ void InitComputeAccelKernel (float *CellAbscissa, float *CellOrdinate, float *Rmed, int nsec, int nrad, float *sinj, float *cosj);
+__global__ void InitComputeAccelKernel (float *CellAbscissa, float *CellOrdinate, float *Rmed, int nsec, int nrad);
 
 __global__ void ComputeSoundSpeedKernel (float *SoundSpeed, float *Dens, float *Rmed, float *Energy, int nsec, int nrad,
   int Adiabatic, float ADIABATICINDEX, float FLARINGINDEX, float ASPECTRATIO, float TRANSITIONWIDTH,
@@ -191,3 +191,6 @@ __global__ void kernel(float *Dens, float *VradInt, float *VthetaInt, float *Tem
 __device__ float FViscosityDevice(float r, float VISCOSITY, int ViscosityAlpha, float *Rmed, float ALPHAVISCOSITY,
   float CAVITYWIDTH, float CAVITYRADIUS, float CAVITYRATIO, float PhysicalTime, float PhysicalTimeInitial,
   float ASPECTRATIO, float LAMBDADOUBLING);
+
+__global__ void ApplySubKeplerianBoundaryKernel(float *VthetaInt, float *Rmed, float OmegaFrame, int nsec,
+  int nrad, float VKepIn, float VKepOut);
