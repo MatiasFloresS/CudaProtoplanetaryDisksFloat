@@ -12,7 +12,7 @@ inline void gpuAssert (cudaError_t code, const char *file, int line, bool abort=
 __global__ void Substep1KernelVrad (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potential,
   float *Rinf, float *invRinf, float *Vrad, float dt,  int nrad, int nsec, float OmegaFrame, float *Vtheta);
 
-__global__ void Substep1KernelVtheta (float *Pressure, float *Dens, float *Potential, float *VthetaInt, float *Vtheta, float dt, int nrad, int nsec, int ZMPlus, float *supp_torque, float *invdxtheta);
+__global__ void Substep1KernelVtheta (float *Pressure, float *Dens, float *Potential, float *VthetaInt, float *Vtheta, float dt, int nrad, int nsec, int ZMPlus, float *supp_torque, float *Rmed);
 
 __global__ void Substep2Kernel (float *Dens, float *VradInt, float *VthetaInt, float *TemperInt,
   int nrad, int nsec, float *invdiffRmed, float *invdiffRsup, float *DensInt, int Adiabaticc,
@@ -184,9 +184,9 @@ __global__ void ApplySubKeplerianBoundaryKernel(float *VthetaInt, float *Rmed, f
 
 __device__ inline void MyAtomicAdd (float *address, float value);
 
-__global__ void kernel(float *Dens, float *VradInt, float *VthetaInt, float *TemperInt, int nrad,
+__global__ void Substep2Kernel2 (float *Dens, float *VradInt, float *VthetaInt, float *TemperInt, int nrad,
   int nsec, float *invdiffRmed, float *invdiffRsup, float *DensInt, int Adiabatic, float *Rmed,
-  float dt, float *VradNew, float *VthetaNew, float *Energy, float *EnergyInt, float *invdxtheta);
+  float dt, float *VradNew, float *VthetaNew, float *Energy, float *EnergyInt);
 
 __device__ float FViscosityDevice(float r, float VISCOSITY, int ViscosityAlpha, float *Rmed, float ALPHAVISCOSITY,
   float CAVITYWIDTH, float CAVITYRADIUS, float CAVITYRATIO, float PhysicalTime, float PhysicalTimeInitial,

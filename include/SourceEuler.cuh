@@ -19,4 +19,3 @@ __host__ void Substep1cudamalloc (float *Vrad, float *Vtheta);
 __host__ void FillForcesArrays (PlanetarySystem *sys, float *Dens, float *Energy);
 __host__ int ConditionCFL (float *Vrad, float *Vtheta , float DeltaT);
 __host__ float CircumPlanetaryMass (float *Dens, PlanetarySystem *sys);
-__host__ void host (float dt);

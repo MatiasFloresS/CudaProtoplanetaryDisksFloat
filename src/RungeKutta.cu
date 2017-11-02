@@ -1,3 +1,4 @@
+// Revisado
 #include "Main.cuh"
 
 static double k1[100], k2[100], k3[100], k4[100], k5[100], k6[100];

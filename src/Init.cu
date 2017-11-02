@@ -7,7 +7,7 @@ extern dim3 dimGrid2, dimBlock2;
 
 __host__ void InitLabel (float *Label, PlanetarySystem *sys)
 {
-  float xp,yp, rhill, rp;
+  double xp,yp, rhill, rp;
   xp = sys->x[0];
   yp = sys->y[0];
   rp = sqrt(xp*xp+yp*yp);

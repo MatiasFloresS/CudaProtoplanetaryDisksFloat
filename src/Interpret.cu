@@ -234,7 +234,7 @@ __host__ void PrintUsage (char *execname)
 
 __host__ float TellNbOrbits (float time)
 {
-  return time/2.0/PI*sqrtf(G*1.0/1.0/1.0/1.0);
+  return time/2.0/PI*sqrt(G*1.0/1.0/1.0/1.0);
 }
 
 __host__ float TellNbOutputs (float time)
@@ -250,11 +250,11 @@ __host__ void TellEverything()
   printf ("Inner Radius          : %g\n", RMIN);
   printf ("Outer Radius          : %g\n", RMAX);
   printf ("Aspect Ratio          : %g\n", ASPECTRATIO);
-  printf ("VKep at inner edge    : %.3g\n", sqrtf(G*1.0*(1.-0.0)/RMIN));
-  printf ("VKep at outer edge    : %.3g\n", sqrtf(G*1.0/RMAX));
-  temp=2.0*PI*SIGMA0/(2.0-SIGMASLOPE)*(powf(RMAX,2.0-SIGMASLOPE) - powf(RMIN,2.0-SIGMASLOPE));	/* correct this and what follows... */
+  printf ("VKep at inner edge    : %.3g\n", sqrt(G*1.0*(1.-0.0)/RMIN));
+  printf ("VKep at outer edge    : %.3g\n", sqrt(G*1.0/RMAX));
+  temp=2.0*PI*SIGMA0/(2.0-SIGMASLOPE)*(pow(RMAX,2.0-SIGMASLOPE) - pow(RMIN,2.0-SIGMASLOPE));	/* correct this and what follows... */
   printf ("Initial Disk Mass             : %g\n", temp);
-  temp=2.0*PI*SIGMA0/(2.0-SIGMASLOPE)*(1.0 - powf(RMIN,2.0-SIGMASLOPE));
+  temp=2.0*PI*SIGMA0/(2.0-SIGMASLOPE)*(1.0 - pow(RMIN,2.0-SIGMASLOPE));
   printf ("Initial Mass inner to r=1.0  : %g \n", temp);
   temp=2.0*PI*SIGMA0/(2.0-SIGMASLOPE)*(pow(RMAX,2.0-SIGMASLOPE) - 1.0);
   printf ("Initial Mass outer to r=1.0  : %g \n", temp);
@@ -270,9 +270,9 @@ __host__ void TellEverything()
   temp = 2.0*PI*sqrt(RMAX*RMAX*RMAX/G/1.0);
   printf ("Orbital time at Rmax  : %.3g ~ %.2f outputs\n", temp, TellNbOutputs(temp));
   printf ("Sound speed :\n");
-  printf (" * At unit radius     : %.3g\n", ASPECTRATIO*sqrtf(G*1.0));
-  printf (" * At outer edge      : %.3g\n", ASPECTRATIO*sqrtf(G*1.0/RMAX));
-  printf (" * At inner edge      : %.3g\n", ASPECTRATIO*sqrtf(G*1.0/RMIN));
+  printf (" * At unit radius     : %.3g\n", ASPECTRATIO*sqrt(G*1.0));
+  printf (" * At outer edge      : %.3g\n", ASPECTRATIO*sqrt(G*1.0/RMAX));
+  printf (" * At inner edge      : %.3g\n", ASPECTRATIO*sqrt(G*1.0/RMIN));
   printf ("\nGrid properties:\n");
   printf ("----------------\n");
   printf ("Number of rings       : %d\n", NRAD);

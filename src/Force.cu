@@ -4,9 +4,8 @@
 extern string OUTPUTDIR;
 
 extern float ROCHESMOOTHING, THICKNESSSMOOTHING, FLARINGINDEX;
-extern float *CellAbscissa, *CellOrdinate, *forcesxi, *forcesyi, *forcesxo, *forcesyo;
+extern float *CellAbscissa, *CellOrdinate, *forcesxi, *forcesyi, *forcesxo, *forcesyo, *Rmed, *Surf;
 extern float *CellAbscissa_d, *CellOrdinate_d, *fxi_d, *fxo_d, *fyi_d, *fyo_d, *Rmed_d, *Surf_d, *Dens_d;
-extern float *Rmed, *Surf;
 
 extern int RocheSmoothing, size_grid, NRAD, NSEC, SelfGravity;
 extern dim3 dimGrid2, dimBlock2;
@@ -15,9 +14,9 @@ __host__ Force *AllocateForce (int dimfxy)
 {
   int i;
   Force *force;
-  float *globalforce;
+  double *globalforce;
   force = (Force *)malloc(sizeof(Force));
-  globalforce = (float *)malloc(sizeof(float)*4*dimfxy);
+  globalforce = (double *)malloc(sizeof(double)*4*dimfxy);
   for (i = 0; i < 4*dimfxy; i++)
     globalforce[i] = 0.;
   force->GlobalForce = globalforce;
@@ -29,13 +28,12 @@ __host__ void FreeForce (Force *force)
   free (force->GlobalForce);
 }
 
-__host__ void ComputeForce (Force *force, float *Dens, float x, float y, float rsmoothing, float mass, int dimfxy)
+__host__ void ComputeForce (Force *force, float *Dens, double x, double y, double rsmoothing, double mass, int dimfxy)
 {
   int k;
-  float rh, a;
-  float *globalforce;
+  double rh, a;
+  double *globalforce;
 
-  float hillcutfactor, hill_cut = 1.0;
   globalforce = force->GlobalForce;
 
   a = sqrt(x*x+y*y);
@@ -68,19 +66,19 @@ __host__ void ComputeForce (Force *force, float *Dens, float x, float y, float r
   force->GlobalForce = globalforce;
 }
 
-__host__ float Compute_smoothing(float r)
+__host__ double Compute_smoothing(double r)
 {
-  float smooth;
+  double smooth;
   smooth = THICKNESSSMOOTHING * AspectRatioHost(r) * pow(r, 1.0+FLARINGINDEX);
   return smooth;
 }
 
 __host__ void UpdateLog (Force *force, PlanetarySystem *sys, float *Dens, float *Energy, int TimeStep,
-  float PhysicalTime, int dimfxy)
+  double PhysicalTime, int dimfxy)
 {
   int i, nb, k;
-  float x, y, r, m, vx, vy, smoothing;
-  float *globalforce;
+  double x, y, r, m, vx, vy, smoothing;
+  double *globalforce;
   FILE *out;
   char filename[500];
   char filename2[500];
