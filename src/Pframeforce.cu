@@ -6,7 +6,8 @@ extern int ForcedCircular, Indirect_Term, SelfGravity, Cooling, CentrifugalBalan
 
 extern float *SigmaMed, *EnergyMed, *Pressure, *SoundSpeed, *Potential;
 extern float *viscosity_array, *GLOBAL_bufarray, *vt_int, *SG_Accr, *vt_cent;
-extern float *q0, *PlanetMasses, *q1, *Rmed, *Radii;
+extern float *Rmed, *Radii;
+extern double *q0, *PlanetMasses, *q1;
 
 extern float *Pressure_d, *SoundSpeed_d, *viscosity_array_d, *vt_cent_d, *SigmaInf_d, *SG_Accr_d;
 extern float *Vrad_d, *Vtheta_d, *Potential_d, *Rinf_d, *Rmed_d;
@@ -95,7 +96,7 @@ __host__ void AdvanceSystemRK5 (PlanetarySystem *sys, float dt)
   int nb, i , k;
   int *feelothers;
   nb = sys->nb;
-  float dtheta, omega, rdot, x, y, r, new_r, vx, vy, theta, denom;
+  double dtheta, omega, rdot, x, y, r, new_r, vx, vy, theta, denom;
 
   if (!ForcedCircular){
     for (k = 0; k < nb; k++){

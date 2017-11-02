@@ -55,7 +55,7 @@ extern float *invdiffRmed, *Rinf_d, *Rinf, *invRinf, *Rmed, *invRmed, *Rsup, *in
 float OmegaFrame;
 float *invdiffRmed_d, *invRinf_d, *invRmed_d, *Rmed_d, *Rsup_d, *invdiffRsup_d;
 
-float *q0, *PlanetMasses, *q1;
+double *q0, *PlanetMasses, *q1;
 
 extern int NRAD, NSEC, Cooling;
 extern int *NoSplitAdvection_d;
@@ -690,9 +690,9 @@ __host__ void CreateArrays () // ordenar
   Qbase           = (float *)malloc(size_grid*sizeof(float));
   array           = (float *)malloc(size_grid*sizeof(float));
   mdcp0           = (float *)malloc(size_grid*sizeof(float));
-  q0              = (float *)malloc(400*sizeof(float));
-  q1              = (float *)malloc(400*sizeof(float));
-  PlanetMasses    = (float *)malloc(100*sizeof(float));
+  q0              = (double *)malloc(400*sizeof(double));
+  q1              = (double *)malloc(400*sizeof(double));
+  PlanetMasses    = (double *)malloc(100*sizeof(double));
 
 }
 
