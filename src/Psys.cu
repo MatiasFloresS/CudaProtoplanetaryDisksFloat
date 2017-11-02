@@ -1,12 +1,10 @@
+// Revisado
 #include "Main.cuh"
 
-extern float *Radii, ECCENTRICITY;
+extern float *Radii, *Rmed, ECCENTRICITY;
 static float Xplanet, Yplanet;
 extern int GuidingCenter;
 float HillRadius;
-extern float *Rmed;
-
-
 
 __host__ int FindNumberOfPlanets (char *filename)
 {
@@ -25,8 +23,6 @@ __host__ int FindNumberOfPlanets (char *filename)
   fclose (input);
   return Counter;
 }
-
-
 
 __host__ PlanetarySystem *AllocPlanetSystem (int nb)
 {
@@ -51,8 +47,8 @@ __host__ PlanetarySystem *AllocPlanetSystem (int nb)
     exit (1);
   }
 
-  feeldisk   = (int *)malloc(sizeof(int)*(nb+1));
-  feelothers = (int *)malloc(sizeof(int)*(nb+1));
+  feeldisk   = (int *)malloc(sizeof(double)*(nb+1));
+  feelothers = (int *)malloc(sizeof(double)*(nb+1));
   if ((feeldisk == NULL) || (feelothers == NULL)){
     fprintf (stderr, "Not enough memory.\n");
     exit (1);
@@ -73,8 +69,6 @@ __host__ PlanetarySystem *AllocPlanetSystem (int nb)
   return sys;
 }
 
-
-
 __host__ void FreePlanetary (PlanetarySystem *sys)
 {
   free (sys->x);
@@ -87,8 +81,6 @@ __host__ void FreePlanetary (PlanetarySystem *sys)
   free (sys->FeelDisk);
   free (sys);
 }
-
-
 
 __host__ PlanetarySystem *InitPlanetarySystem (char *filename)
 {
@@ -141,8 +133,6 @@ __host__ PlanetarySystem *InitPlanetarySystem (char *filename)
   return sys;
 }
 
-
-
 __host__ void ListPlanets (PlanetarySystem *sys)
 {
   int nb;
@@ -169,8 +159,6 @@ __host__ void ListPlanets (PlanetarySystem *sys)
   }
 }
 
-
-
 __host__ float GetPsysInfo (PlanetarySystem *sys, int action)
 {
 
@@ -185,14 +173,14 @@ __host__ float GetPsysInfo (PlanetarySystem *sys, int action)
   m = sys->mass[0]+1.;
   h = x*vy-y*vx;
   d = sqrt(x*x+y*y);
-
   Ax = x*vy*vy-y*vx*vy -G*m*x/d;
   Ay = y*vx*vx-x*vx*vy -G*m*y/d;
-
   e = sqrt(Ax*Ax+Ay*Ay)/m;
   a = h*h/G/m/(1.-e*e);
-  if (e == 0.0) arg = 1.0;
-  else arg = (1.0-d/a)/e;
+  if (e == 0.0)
+    arg = 1.0;
+  else
+    arg = (1.0-d/a)/e;
 
   if (fabs(arg) >= 1.0)
     E = PI*(1.-arg/fabs(arg))/2.;
@@ -201,8 +189,8 @@ __host__ float GetPsysInfo (PlanetarySystem *sys, int action)
 
   if ((x*y*(vy*vy-vx*vx)+vx*vy*(x*x-y*y)) < 0) E= -E;
   M = E-e*sin(E);
-  PerihelionPA=atan2(Ay,Ax);
   omega = sqrt(m/a/a/a);
+  PerihelionPA=atan2(Ay,Ax);
 
   if (GuidingCenter == YES){
     xc = a*cos(M+PerihelionPA);
@@ -211,7 +199,7 @@ __host__ float GetPsysInfo (PlanetarySystem *sys, int action)
     vyc =  a*omega*cos(M+PerihelionPA);
   }
 
-  if (e < 1e-08){
+  if (e < 1e-8){
     xc = x;
     yc = y;
     vxc = vx;
@@ -242,8 +230,6 @@ __host__ float GetPsysInfo (PlanetarySystem *sys, int action)
   }
   return 0.0;
 }
-
-
 
 __host__ void RotatePsys (PlanetarySystem *sys, float angle) /* Rotate by angle '-angle' */
 {

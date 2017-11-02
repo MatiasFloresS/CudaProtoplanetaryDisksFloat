@@ -1,3 +1,4 @@
+// Revisado
 #include "Main.cuh"
 
 extern string OUTPUTDIR;

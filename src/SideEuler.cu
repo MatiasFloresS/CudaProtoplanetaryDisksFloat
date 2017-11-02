@@ -1,3 +1,4 @@
+// Revisado
 #include "Main.cuh"
 
 extern int OpenInner, NSEC, size_grid, NonReflecting, Adiabatic, NRAD;
@@ -171,15 +172,14 @@ __host__ void ApplySubKeplerianBoundary(float *VthetaInt)
 __host__ void ApplyBoundaryCondition (float *Dens, float *Energy, float *Vrad, float *Vtheta, float step)
 {
   if(OpenInner == YES) OpenBoundary ();
-
   if (NonReflecting == YES){
-    if (Adiabatic) ComputeSoundSpeed ();
+    if (Adiabatic)
+      ComputeSoundSpeed ();
     NonReflectingBoundary (Dens, Energy, Vrad);
   }
   if (Evanescent == YES) EvanescentBoundary (Vrad, Vtheta, Dens, Energy, step);
-  if (OuterSourceMass == YES) printf("hola\n" );
+  //if (OuterSourceMass == YES) ApplyBoundaryCondition (Dens, Vrad);
 }
-
 
 __host__ void CorrectVtheta (float *Vtheta, float domega)
 {

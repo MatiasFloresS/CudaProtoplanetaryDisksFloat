@@ -1,4 +1,4 @@
-
+// Revisado
 #include "Main.cuh"
 
 extern int NRAD, NSEC, size_grid, RocheSmoothing;

@@ -516,6 +516,7 @@ __global__ void NonReflectingBoundaryKernel (float *Dens, float *Energy, int i_a
   int j = threadIdx.x + blockDim.x*blockIdx.x;
   int i = 1;
   int jp;
+  float Vrad_med;
 
   if (j<nsec){
     jp = j+i_angle;
@@ -1202,14 +1203,14 @@ __global__ void FillForcesArraysKernel (float *Rmed, int nsec, int nrad, float x
   }
 }
 
-
+/* Listo */
 __global__ void CorrectVthetaKernel (float *Vtheta, float domega, float *Rmed, int nrad, int nsec)
 {
     int j = threadIdx.x + blockDim.x*blockIdx.x;
     int i = threadIdx.y + blockDim.y*blockIdx.y;
 
     if (i<nrad && j<nsec)
-      Vtheta[i*nsec + j] = Vtheta[i*nsec + j] - domega*Rmed[i];
+      Vtheta[i*nsec + j] -= domega*Rmed[i];
 }
 
 

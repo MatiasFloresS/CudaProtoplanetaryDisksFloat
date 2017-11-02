@@ -1,3 +1,4 @@
+// Revisado
 #include "Main.cuh"
 
 extern int NRAD, NSEC;
@@ -5,7 +6,6 @@ extern float *Rinf, *Rsup;
 
 __host__ void AccreteOntoPlanets (float *Dens, float *Vrad, float *Vtheta, float dt, PlanetarySystem *sys)
 {
-
   double RRoche, Rplanet, distance;
   int i_min, i_max, j_min, j_max, angle;
   double facc, facc1, facc2, frac1, frac2; /* We adopt the same notations as W. Kley*/
