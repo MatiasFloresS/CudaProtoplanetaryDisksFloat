@@ -1,7 +1,7 @@
 #include "Main.cuh"
 
-static float k1[100], k2[100], k3[100], k4[100], k5[100], k6[100];
-static float Dist[100];
+static double k1[100], k2[100], k3[100], k4[100], k5[100], k6[100];
+static double Dist[100];
 
 extern int Indirect_Term;
 
@@ -69,5 +69,5 @@ __host__ void RungeKutta (double *q0, float timestep, double *PlanetMasses, doub
   DerivMotionRK5 (q1, PlanetMasses, k6, nb, timestep, feelothers);
   for (int i = 0; i < 4*nb; i++)
     q1[i] = q0[i]+37.0/378.0*k1[i]+250.0/621.0*k3[i]+125.0/594.0*k4[i]+512.0/1771.0*k6[i];
-  
+
 }
