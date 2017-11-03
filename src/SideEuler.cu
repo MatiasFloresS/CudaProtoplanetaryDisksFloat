@@ -70,7 +70,7 @@ __host__ void OpenBoundary ()
 __host__ void NonReflectingBoundary (float *Dens, float *Energy, float *Vrad)
 {
   int i,i_angle, i_angle2;
-  float dangle, dangle2;
+  double dangle, dangle2;
 
   ReduceCs();
 
@@ -122,7 +122,7 @@ __host__ void ReduceMean (float *Dens, float *Energy)
 __host__ void EvanescentBoundary (float *Vrad, float *Vtheta, float *Dens, float *Energy, float step)
 {
 
-  float Tin, Tout, DRMIN, DRMAX;
+  double Tin, Tout, DRMIN, DRMAX;
   /* Orbital period at inner and outer boundary */
   Tin = 2.0*PI*pow(Rmed[0],3./2);;
   Tout = 2.0*PI*pow(Rmed[NRAD-1],3./2);

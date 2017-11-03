@@ -4,22 +4,16 @@ extern int NRAD, NSEC, size_grid, AdvecteLabel, OpenInner, Adiabatic, FastTransp
 
 extern float OmegaFrame;
 
-extern float *Label_d, *QStar_d, *Qbase_d, *Qbase2_d;
-extern float *DensStar_d, *array_d;
-extern float *DensStar, *QStar, *Qbase;
+extern float *Label_d, *QStar_d, *Qbase_d, *Qbase2_d, *DensStar_d, *array_d;
 extern float *invdiffRmed_d, *Rinf_d, *Rmed_d, *invRmed_d, *Rsup_d, *invSurf_d,  *Surf_d;
-
-extern float *Dens_d, *Vrad_d, *Vtheta_d, *Energy_d,  *Vazimutal_d, *DensInt_d, *DensInt;
+extern float *Dens_d, *Vrad_d, *Vtheta_d, *Energy_d,  *Vazimutal_d, *DensInt_d
+extern float *DensStar, *QStar, *Qbase, *DensInt;
 
 extern dim3 dimGrid2, dimBlock2, dimBlock, dimGrid4;
 
-float *RadMomP, *RadMomM, *ThetaMomP, *ThetaMomM, *Work;
+float *RadMomP, *RadMomM, *ThetaMomP, *ThetaMomM, *Work, *QRStar, *ExtLabel, *dq, *TempShift;
 float *VthetaRes, *RadMomP_d, *RadMomM_d, *ThetaMomP_d, *ThetaMomM_d, *VthetaRes_d, *Work_d, *TempShift_d;
-
-float *QRStar, *ExtLabel, *dq;
-float *TempShift;
-float *QRStar_d, *ExtLabel_d;
-float *dq_d, *LostByDisk_d, *VMed_d;
+float *QRStar_d, *ExtLabel_d, *dq_d, *LostByDisk_d, *VMed_d;
 float LostMass = 0.0;
 
 static int UniformTransport;

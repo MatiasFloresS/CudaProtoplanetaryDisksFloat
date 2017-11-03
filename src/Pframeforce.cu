@@ -37,8 +37,8 @@ __host__ void ComputeIndirectTerm ()
 __host__ void FillForcesArrays (PlanetarySystem *sys, float *Dens, float *Energy)
 {
   int NbPlanets, k;
-  float xplanet, yplanet, mplanet;
-  float PlanetDistance, InvPlanetDistance3, RRoche, smooth, smoothing;
+  double xplanet, yplanet, mplanet;
+  double PlanetDistance, InvPlanetDistance3, RRoche, smooth, smoothing;
   NbPlanets = sys->nb;
 
   /* Indirect term star on gas here */
@@ -69,7 +69,7 @@ __host__ void AdvanceSystemFromDisk (Force *force, float *Dens, float *Energy, P
 {
   int NbPlanets, k;
   Pair gamma;
-  float m, x, y, r, smoothing;
+  double m, x, y, r, smoothing;
   NbPlanets = sys->nb;
 
   for (k = 0; k < NbPlanets; k++){
