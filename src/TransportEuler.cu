@@ -6,7 +6,7 @@ extern float OmegaFrame;
 
 extern float *Label_d, *QStar_d, *Qbase_d, *Qbase2_d, *DensStar_d, *array_d;
 extern float *invdiffRmed_d, *Rinf_d, *Rmed_d, *invRmed_d, *Rsup_d, *invSurf_d,  *Surf_d;
-extern float *Dens_d, *Vrad_d, *Vtheta_d, *Energy_d,  *Vazimutal_d, *DensInt_d
+extern float *Dens_d, *Vrad_d, *Vtheta_d, *Energy_d,  *Vazimutal_d, *DensInt_d;
 extern float *DensStar, *QStar, *Qbase, *DensInt;
 
 extern dim3 dimGrid2, dimBlock2, dimBlock, dimGrid4;
@@ -28,8 +28,8 @@ __host__ void Transport (float *Dens, float *Vrad, float *Vtheta, float *Energy,
   //if (AdvecteLabel == YES) ComputeExtQty();
 
   /* No-Alternate Directionnal Splitting */
-  OneWindRad (Dens, Vrad, Energy, dt);
-  OneWindTheta (Dens, Vtheta, Energy, dt);
+ // OneWindRad (Dens, Vrad, Energy, dt);
+  //OneWindTheta (Dens, Vtheta, Energy, dt);
   ComputeVelocities (Dens, Vrad, Vtheta);
   //if (AdvecteLabel) ComputeSpeQty (Dens, Label, ExtLabel);
 }

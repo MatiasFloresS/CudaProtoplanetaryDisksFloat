@@ -274,7 +274,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
         printf("c");
       }
       else*/
-     // printf(".");
+      printf(".");
       //if (ZMPlus) compute_anisotropic_pressurecoeff(sys);
 
       ComputePressureField ();
@@ -297,6 +297,7 @@ __host__ void AlgoGas (Force *force, float *Dens, float *Vrad, float *Vtheta, fl
     init = init + 1;
     PhysicalTime += dt;
   }
+  printf("\n");
 }
 
 

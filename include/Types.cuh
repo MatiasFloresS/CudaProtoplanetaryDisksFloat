@@ -23,7 +23,7 @@ struct force {
   float fy_outer;
   float fx_ex_outer;
   float fy_ex_outer;
-  float *GlobalForce;
+  double *GlobalForce;
 };
 
 typedef struct force Force;
