@@ -28,8 +28,8 @@ __host__ void Transport (float *Dens, float *Vrad, float *Vtheta, float *Energy,
   //if (AdvecteLabel == YES) ComputeExtQty();
 
   /* No-Alternate Directionnal Splitting */
- // OneWindRad (Dens, Vrad, Energy, dt);
-  //OneWindTheta (Dens, Vtheta, Energy, dt);
+  OneWindRad (Dens, Vrad, Energy, dt);
+  OneWindTheta (Dens, Vtheta, Energy, dt);
   ComputeVelocities (Dens, Vrad, Vtheta);
   //if (AdvecteLabel) ComputeSpeQty (Dens, Label, ExtLabel);
 }
