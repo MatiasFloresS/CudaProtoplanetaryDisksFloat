@@ -350,8 +350,8 @@ __host__ int main (int argc, char *argv[])
 
     if (InnerOutputCounter == 1){
       InnerOutputCounter = 0;
-     // WriteBigPlanetSystemFile (sys, TimeStep);
-      //UpdateLog(force, sys, Dens, Energy, TimeStep, PhysicalTime, dimfxy);
+      WriteBigPlanetSystemFile (sys, TimeStep);
+      UpdateLog(force, sys, Dens, Energy, TimeStep, PhysicalTime, dimfxy);
     }
 
     if (NINTERM * (TimeStep = (i / NINTERM)) == i){
