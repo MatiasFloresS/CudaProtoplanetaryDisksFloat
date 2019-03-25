@@ -49,10 +49,10 @@ __host__ void ComputeForce (Force *force, float *Dens, double x, double y, doubl
       NSEC, NRAD, Rmed_d, rh, fxi_d, fxo_d, fyi_d, fyo_d, k, dimfxy, a);
     gpuErrchk(cudaDeviceSynchronize());
 
-    globalforce[k]            = DeviceReduce(fxi_d, NRAD*NSEC);
-    globalforce[k + dimfxy]   = DeviceReduce(fxo_d, NRAD*NSEC);
-    globalforce[k + 2*dimfxy] = DeviceReduce(fyi_d, NRAD*NSEC);
-    globalforce[k + 3*dimfxy] = DeviceReduce(fyo_d, NRAD*NSEC);
+    globalforce[k]            = DeviceReduce<float>(fxi_d, NRAD*NSEC);
+    globalforce[k + dimfxy]   = DeviceReduce<float>(fxo_d, NRAD*NSEC);
+    globalforce[k + 2*dimfxy] = DeviceReduce<float>(fyi_d, NRAD*NSEC);
+    globalforce[k + 3*dimfxy] = DeviceReduce<float>(fyo_d, NRAD*NSEC);
   }
 
   force->fx_inner = globalforce[0];

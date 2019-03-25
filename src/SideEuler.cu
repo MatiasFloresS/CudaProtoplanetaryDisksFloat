@@ -101,10 +101,10 @@ __host__ void ReduceCs ()
   ReduceCsKernel<<<dimGrid, dimBlock>>> (SoundSpeed_d, cs0_d, cs1_d, csnrm1_d, csnrm2_d, NSEC, NRAD);
   gpuErrchk(cudaDeviceSynchronize());
 
-  cs0_r    = DeviceReduce(cs0_d, NSEC) / NSEC;
-  cs1_r    = DeviceReduce(cs1_d, NSEC) / NSEC;
-  csnrm1_r = DeviceReduce(csnrm1_d, NSEC) / NSEC;
-  csnrm2_r = DeviceReduce(csnrm2_d, NSEC) / NSEC;
+  cs0_r    = DeviceReduce<float>(cs0_d, NSEC) / NSEC;
+  cs1_r    = DeviceReduce<float>(cs1_d, NSEC) / NSEC;
+  csnrm1_r = DeviceReduce<float>(csnrm1_d, NSEC) / NSEC;
+  csnrm2_r = DeviceReduce<float>(csnrm2_d, NSEC) / NSEC;
 }
 
 __host__ void ReduceMean (float *Dens, float *Energy)
@@ -112,10 +112,10 @@ __host__ void ReduceMean (float *Dens, float *Energy)
   ReduceMeanKernel<<<dimGrid, dimBlock>>>(Dens_d, Energy_d, NSEC, mean_dens_d, mean_energy_d, mean_dens_d2, mean_energy_d2, NRAD);
   gpuErrchk(cudaDeviceSynchronize());
 
-  mean_dens_r    = DeviceReduce(mean_dens_d, NSEC)    / NSEC;
-  mean_dens_r2   = DeviceReduce(mean_dens_d2, NSEC)   / NSEC;
-  mean_energy_r  = DeviceReduce(mean_energy_d, NSEC)  / NSEC;
-  mean_energy_r2 = DeviceReduce(mean_energy_d2, NSEC) / NSEC;
+  mean_dens_r    = DeviceReduce<float>(mean_dens_d, NSEC)    / NSEC;
+  mean_dens_r2   = DeviceReduce<float>(mean_dens_d2, NSEC)   / NSEC;
+  mean_energy_r  = DeviceReduce<float>(mean_energy_d, NSEC)  / NSEC;
+  mean_energy_r2 = DeviceReduce<float>(mean_energy_d2, NSEC) / NSEC;
   gpuErrchk(cudaDeviceSynchronize());
 }
 

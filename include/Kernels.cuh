@@ -1,3 +1,6 @@
+#include <cooperative_groups.h>
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert (cudaError_t code, const char *file, int line, bool abort=true)
@@ -8,6 +11,13 @@ inline void gpuAssert (cudaError_t code, const char *file, int line, bool abort=
       if (abort) exit(code);
    }
 }
+
+__host__ bool IsPow2 (unsigned int x);
+
+__host__ long NearestPowerOf2 (long n);
+
+template <class T>
+__host__ T DeviceReduce(T *in, long N);
 
 __global__ void Substep1KernelVrad (float *Pressure, float *Dens, float *VradInt, float *invdiffRmed, float *Potential,
   float *Rinf, float *invRinf, float *Vrad, float dt,  int nrad, int nsec, float OmegaFrame, float *Vtheta);
@@ -47,13 +57,8 @@ __global__ void InitLabelKernel (float *Label, float xp, float yp, float rhill, 
 __global__ void CircumPlanetaryMassKernel (float *Dens, float *Surf, float *CellAbscissa, float *CellOrdinate, float xpl, float ypl, int nrad,
   int nsec, float HillRadius, float *mdcp0);
 
-__global__ void DeviceReduceKernel (float *g_idata, float *g_odata, unsigned int n);
-
-__host__ bool IsPow2 (unsigned int x);
-
-__host__ long NearestPowerOf2 (long n);
-
-__host__ float DeviceReduce (float *in, int N) ;
+template <class T, unsigned int blockSize, bool nIsPow2>
+__global__ void deviceReduceKernel(T *g_idata, T *g_odata, unsigned int n);
 
 __global__ void MultiplyPolarGridbyConstantKernel (float *Dens, int nrad, int nsec, float ScalingFactor);
 
